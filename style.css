@@ -126,6 +126,29 @@ header .back:hover{ color:#fff; }
   padding:4px 9px; font-size:12px; color:var(--gray); cursor:pointer; }
 .kr button:hover{ border-color:#B91C1C; color:#B91C1C; }
 
+/* 견주기 */
+.two{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.tcard{ border:1px solid var(--line); border-radius:10px; padding:14px; background:var(--card); }
+.tcard .tag{ display:inline-block; font-size:11px; font-weight:800; letter-spacing:.05em;
+  color:var(--ac); background:var(--ac-l); border-radius:5px; padding:3px 8px; margin-bottom:8px; }
+.tcard .jp{ font-size:19px; }
+.tcard .btns{ margin-top:10px; }
+
+/* 입장 정하기 */
+.ques{ font-size:17px; font-weight:800; line-height:1.5; }
+.picks{ display:flex; gap:10px; margin-top:12px; }
+.pick{ flex:1; border:1px solid var(--line); background:var(--card); border-radius:10px;
+  padding:15px 10px; font-size:16px; font-weight:800; cursor:pointer; }
+.pick:hover{ border-color:var(--ac); color:var(--ac); }
+.pick.on{ border-color:var(--ac); background:var(--ac); color:#fff; }
+
+/* 일반화 짓기 */
+.gen{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:16px; font-weight:700; }
+.gen input{ flex:1 1 150px; min-width:0; border:0; border-bottom:2px solid var(--ac);
+  background:transparent; padding:8px 4px; font-size:17px; font-weight:700; }
+.gen input:focus{ outline:0; background:var(--ac-l); }
+.gen span{ color:var(--gray); font-weight:600; flex:0 0 auto; }
+
 /* 표 · 글쓰기 */
 .grid{ width:100%; border-collapse:collapse; }
 .grid th{ background:var(--bg); border:1px solid var(--line); padding:8px 10px; font-size:12.5px;
@@ -225,6 +248,10 @@ header .back:hover{ color:#fff; }
   .grid td:first-of-type{ border-top:0; }
   .grid td::before{ content:attr(data-l); display:block; font-size:12px; font-weight:700;
     color:var(--gray); padding:9px 0 0; }
+  .two{ grid-template-columns:1fr; }
+  .picks{ flex-direction:column; }
+  .pick{ min-height:52px; }
+  .gen input{ flex:1 1 100%; font-size:16px; }
   .grid.qa tr::before{ display:none; }        /* 묻고 답하는 표에는 줄 번호를 붙이지 않습니다 */
   .grid.qa td{ padding-bottom:6px; }
   .grid input{ padding:6px 0 10px; font-size:16px; }

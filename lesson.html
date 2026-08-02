@@ -98,7 +98,9 @@ L.blocks.forEach(function(b, bi){
   box.appendChild(el);
   var into = $(".in", el);
   ({ sentences:drawSentences, words:drawWords, builder:drawBuilder,
-     record:drawRecord, rows:drawRows, write:drawWrite }[b.type] || function(){})(b, into, bi);
+     record:drawRecord, rows:drawRows, write:drawWrite,
+     compare:drawCompare, stance:drawStance, general:drawGeneral
+   }[b.type] || function(){})(b, into, bi);
 });
 
 /* 문장 듣고 따라 말하기 */
@@ -284,6 +286,72 @@ function drawRows(b, into, bi){
   });
 }
 
+/* 견주기 — 두 가지를 듣고 무엇이 다른지 (개념적 질문) */
+function drawCompare(b, into, bi){
+  into.innerHTML =
+    '<div class="two">' + b.items.map(function(x, i){
+      return '<div class="tcard"><div class="tag">' + esc(x.tag || (i ? "나" : "가")) + '</div>' +
+        '<div class="jp">' + esc(x.jp) + '</div>' +
+        '<div class="yomi">' + esc(x.y) + '</div>' +
+        '<div class="ko">' + esc(x.ko) + '</div>' +
+        '<div class="btns"><button class="act" data-c="' + i + '" type="button">' + IC.play + '듣기</button></div>' +
+      '</div>';
+    }).join("") + '</div>' +
+    '<p class="lab">' + esc(b.ask) + '</p>' +
+    '<textarea class="wmany" rows="3" placeholder="' + esc(b.placeholder || "") + '"></textarea>';
+  $$("[data-c]", into).forEach(function(x){
+    x.onclick = function(){ speak(b.items[+x.dataset.c].jp, false); };
+  });
+  var el = $(".wmany", into);
+  el.oninput = function(){ STATE[bi].text = el.value; };
+}
+
+/* 입장 정하기 — 고르고 까닭 대기 (논쟁적 질문) */
+function drawStance(b, into, bi){
+  into.innerHTML =
+    '<p class="ques">' + esc(b.question) + '</p>' +
+    '<div class="picks">' + b.options.map(function(o, i){
+      return '<button class="pick" data-o="' + i + '" type="button">' + esc(o) + '</button>';
+    }).join("") + '</div>' +
+    '<p class="lab">' + esc(b.ask || "왜 그렇게 생각합니까?") + '</p>' +
+    '<textarea class="wmany" rows="3" placeholder="' + esc(b.placeholder || "") + '"></textarea>';
+
+  STATE[bi].pick = "";
+  $$("[data-o]", into).forEach(function(x){
+    x.onclick = function(){
+      STATE[bi].pick = b.options[+x.dataset.o];
+      $$(".pick", into).forEach(function(p){ p.classList.remove("on"); });
+      x.classList.add("on");
+    };
+  });
+  var el = $(".wmany", into);
+  el.oninput = function(){ STATE[bi].text = el.value; };
+}
+
+/* 일반화 짓기 — 「○○이 바뀌면 △△도 바뀐다」 */
+function drawGeneral(b, into, bi){
+  into.innerHTML =
+    '<div class="gen">' +
+      '<input class="ga" placeholder="' + esc(b.aHint || "무엇이") + '">' +
+      '<span>이(가) 바뀌면</span>' +
+      '<input class="gb" placeholder="' + esc(b.bHint || "무엇이") + '">' +
+      '<span>도 바뀐다.</span>' +
+    '</div>' +
+    '<div class="made" style="margin-top:12px"><div class="lab2">내가 지은 문장</div>' +
+      '<div class="jp gout" style="font-size:19px">두 칸을 채우면 여기에 나옵니다.</div></div>';
+
+  function 짓기(){
+    var a = $(".ga", into).value.trim(), c = $(".gb", into).value.trim();
+    if (!a || !c){ $(".gout", into).textContent = "두 칸을 채우면 여기에 나옵니다.";
+                   STATE[bi].text = ""; return; }
+    var s = josa(a, "{k}{이} 바뀌면 ").replace("{k}", a) + josa(c, "{k}도 바뀐다.").replace("{k}", c);
+    $(".gout", into).textContent = s;
+    STATE[bi].text = s;
+  }
+  $(".ga", into).oninput = 짓기;
+  $(".gb", into).oninput = 짓기;
+}
+
 /* 자유 서술 */
 function drawWrite(b, into, bi){
   into.innerHTML = b.short
@@ -314,7 +382,9 @@ function collect(){
       if (rr.length) lines.push("[" + b.title + "] (" + rr.length + "/" + b.rows + "줄) " +
                                 rr.join(" / "));
     }
-    if (s.text && s.text.trim()) lines.push("[" + b.title + "] " + s.text.trim());
+    if (s.pick) lines.push("[" + b.title + "] 고른 것: " + s.pick +
+                           (s.text && s.text.trim() ? " — " + s.text.trim() : ""));
+    else if (s.text && s.text.trim()) lines.push("[" + b.title + "] " + s.text.trim());
     if (s.audio){ audio = s.audio; mime = s.mime; }
   });
   return { work: lines.join("\n"), score: sc.length
