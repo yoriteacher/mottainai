@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>못타이나이 9차시</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a class="back" href="./">← 차시 목록</a>
+  <h1 id="hTitle">…</h1>
+  <p id="hSub"></p>
+</header>
+
+<div class="wrap">
+  <div id="note" class="notice" style="display:none"></div>
+  <div id="env" class="notice"></div>
+  <div id="blocks"></div>
+
+  <div class="sum">
+    <h2>다 했으면 선생님께 보내기</h2>
+    <p id="sumGoal" class="dim"></p>
+    <div class="btns">
+      <button class="act solid" id="send" type="button"></button>
+      <button class="act" id="copy" type="button">결과 복사하기</button>
+    </div>
+    <p id="sendState" class="dim"></p>
+  </div>
+
+  <nav class="pager">
+    <a id="prev" class="act" href="#">← 앞 차시</a>
+    <a id="next" class="act" href="#">다음 차시 →</a>
+  </nav>
+</div>
+
+<script src="core.js"></script>
+<script src="data.js"></script>
+<script>
+"use strict";
+var N = Math.max(1, Math.min(9, parseInt(
+  (location.search.match(/[?&]n=(\d+)/) || [])[1] || "1", 10)));
+var L = LESSONS[N-1];
+var STATE = [];          // 블록마다 결과를 담는다
+
+document.title = N + "차시 · " + L.title;
+$("#hTitle").textContent = L.icon + " " + N + "차시 · " + L.title;
+$("#hSub").textContent = L.lead;
+$("#sumGoal").textContent = L.goal;
+$("#send").innerHTML = IC.send + " 선생님께 보내기";
+$("#prev").href = "lesson.html?n=" + Math.max(1, N-1);
+$("#next").href = "lesson.html?n=" + Math.min(9, N+1);
+if (N === 1) $("#prev").style.visibility = "hidden";
+if (N === 9) $("#next").style.visibility = "hidden";
+
+/* 환경 안내 */
+(function(){
+  var e = $("#env");
+  if (!SECURE){
+    e.className = "notice bad";
+    e.innerHTML = "<b>지금 주소에서는 마이크를 쓸 수 없습니다.</b> 선생님이 알려 주신 https 주소로 열어 주세요.";
+  } else if (!SR){
+    e.innerHTML = "<b>" + esc(L.lead) + "</b><br>이 기기는 말하기 자동 채점이 되지 않지만, " +
+      "듣기와 쓰기, 녹음, 제출은 모두 됩니다.";
+  } else {
+    e.innerHTML = "<b>" + esc(L.lead) + "</b><br>" + esc(L.goal);
+  }
+})();
+
+/* 지난번 선생님 말씀 */
+fetchMine().then(function(rows){
+  if (!rows) return;
+  var mine = rows.filter(function(r){ return r.lesson === N && r.note; })[0];
+  var prev = rows.filter(function(r){ return r.lesson < N && r.note; }).pop();
+  var r = mine || prev;
+  if (!r) return;
+  $("#note").style.display = "block";
+  $("#note").className = "notice good";
+  $("#note").innerHTML = '<b>선생님 말씀' + (r.lesson === N ? "" : " (" + r.lesson + "차시)") +
+    '</b><br>' + esc(r.note);
+});
+
+/* ── 블록 그리기 ───────────────────────────────────────────── */
+var box = $("#blocks");
+
+L.blocks.forEach(function(b, bi){
+  STATE[bi] = { type:b.type, scores:[], text:"", kept:[], rows:[], audio:null, mime:"" };
+  var el = document.createElement("section");
+  el.className = "step";
+  el.innerHTML = '<div class="top"></div><div class="body">' +
+    '<h2><span class="num">' + (bi+1) + '</span>' + esc(b.title) + '</h2>' +
+    (b.help ? '<p class="help">' + esc(b.help) + '</p>' : '') +
+    '<div class="in"></div></div>';
+  box.appendChild(el);
+  var into = $(".in", el);
+  ({ sentences:drawSentences, words:drawWords, builder:drawBuilder,
+     record:drawRecord, rows:drawRows, write:drawWrite }[b.type] || function(){})(b, into, bi);
+});
+
+/* 문장 듣고 따라 말하기 */
+function drawSentences(b, into, bi){
+  into.innerHTML = b.items.map(function(s, i){
+    return '<div class="sent">' +
+      '<div class="jp">' + esc(s.jp) + '</div>' +
+      '<div class="yomi">' + esc(s.y) + '</div>' +
+      '<div class="ko">' + esc(s.ko) + '</div>' +
+      (s.tip ? '<div class="tip">' + esc(s.tip) + '</div>' : '') +
+      '<div class="btns">' +
+        '<button class="act" data-p="'+i+'" type="button">'+IC.play+'듣기</button>' +
+        '<button class="act" data-s="'+i+'" type="button">'+IC.slow+'천천히</button>' +
+        '<button class="act solid" data-m="'+i+'" type="button"'+(CAN_MIC?"":" disabled")+'>'+IC.mic+'말하기</button>' +
+      '</div><div class="result" id="r'+bi+'_'+i+'"></div></div>';
+  }).join("");
+  $$("[data-p]", into).forEach(function(x){ x.onclick=function(){ speak(b.items[+x.dataset.p].jp,false); }; });
+  $$("[data-s]", into).forEach(function(x){ x.onclick=function(){ speak(b.items[+x.dataset.s].jp,true); }; });
+  $$("[data-m]", into).forEach(function(x){
+    x.onclick = function(){
+      var i = +x.dataset.m;
+      listen(b.items[i], x, $("#r"+bi+"_"+i), function(res){
+        STATE[bi].scores[i] = res.score;
+      });
+    };
+  });
+}
+
+/* 낱말 카드 — 눌러서 듣기 */
+function drawWords(b, into){
+  into.innerHTML = '<div class="cards4">' + b.items.map(function(w,i){
+    return '<button class="wcard" data-w="'+i+'" type="button">' +
+      '<b>' + esc(w.jp) + '</b><span>' + esc(w.y) + '</span><em>' + esc(w.ko) + '</em></button>';
+  }).join("") + '</div>';
+  $$("[data-w]", into).forEach(function(x){
+    x.onclick = function(){ speak(b.items[+x.dataset.w].jp, false); };
+  });
+}
+
+/* 낱말 + 틀 → 문장 만들기 */
+function drawBuilder(b, into, bi){
+  var words = b.words.slice(), W = null, F = null;
+  into.innerHTML =
+    '<p class="lab">① 낱말 고르기</p><div class="chips"></div>' +
+    '<div class="addw"><input class="mw" placeholder="직접 적기 (히라가나)">' +
+    '<input class="my" placeholder="읽는 법 (한글)"><button class="act addb" type="button">넣기</button></div>' +
+    '<p class="lab">② 틀 고르기</p><div class="frames"></div>' +
+    '<div class="made"><div class="none">낱말과 틀을 고르면 문장이 여기에 나옵니다.</div></div>' +
+    '<div class="btns mb" style="display:none">' +
+      '<button class="act p" type="button">'+IC.play+'듣기</button>' +
+      '<button class="act s" type="button">'+IC.slow+'천천히</button>' +
+      '<button class="act solid m" type="button"'+(CAN_MIC?"":" disabled")+'>'+IC.mic+'말하기</button>' +
+      '<button class="act k" type="button">'+IC.keep+'내 카드에 담기</button></div>' +
+    '<div class="result rr"></div>' +
+    '<p class="lab">③ 담은 문장</p><div class="kept"><div class="empty">아직 없습니다.</div></div>';
+
+  function made(){
+    if (W===null || F===null) return null;
+    var w = words[W], f = FRAMES[b.frames[F]];
+    return { jp:f.jp.replace("{w}",w.jp), y:f.y.replace("{y}",w.y),
+             ko:josa(w.ko, f.ko.replace("{k}", w.ko)),
+             alt:f.alt.map(function(a){ return a.replace("{w}", w.jp); }) };
+  }
+  function drawW(){
+    $(".chips", into).innerHTML = words.map(function(w,i){
+      return '<button class="chip'+(W===i?' on':'')+'" data-i="'+i+'" type="button">'+
+        esc(w.jp)+'<small>'+esc(w.y)+' · '+esc(w.ko)+'</small></button>';
+    }).join("");
+    $$("[data-i]", $(".chips",into)).forEach(function(x){
+      x.onclick=function(){ W=+x.dataset.i; drawW(); drawM(); };
+    });
+  }
+  function drawF(){
+    $(".frames", into).innerHTML = b.frames.map(function(key,i){
+      var f = FRAMES[key];
+      return '<button class="frame'+(F===i?' on':'')+'" data-i="'+i+'" type="button">'+
+        '<b>○○'+esc(f.jp.replace("{w}",""))+'</b><small>'+esc(josa("○○", f.ko.replace("{k}","○○")))+
+        (f.from!=="—"?'<br>1차시 '+f.from+'번 문장':'')+'</small></button>';
+    }).join("");
+    $$("[data-i]", $(".frames",into)).forEach(function(x){
+      x.onclick=function(){ F=+x.dataset.i; drawF(); drawM(); };
+    });
+  }
+  function drawM(){
+    var m = made();
+    $(".rr", into).className = "result rr";
+    if (!m){ $(".made",into).innerHTML='<div class="none">낱말과 틀을 고르면 문장이 여기에 나옵니다.</div>';
+             $(".mb",into).style.display="none"; return; }
+    $(".made",into).innerHTML = '<div class="lab2">내가 만든 문장</div><div class="jp">'+esc(m.jp)+
+      '</div><div class="yomi">'+esc(m.y)+'</div><div class="ko">'+esc(m.ko)+'</div>';
+    $(".mb",into).style.display="flex";
+  }
+  function drawK(){
+    var K = STATE[bi].kept;
+    $(".kept",into).innerHTML = K.length ? K.map(function(k,i){
+      return '<div class="krow"><div><b>'+esc(k.jp)+'</b><span>'+esc(k.y)+' · '+esc(k.ko)+'</span></div>'+
+        '<div class="kr"><i>'+(k.score==null?"":k.score+"점")+'</i>'+
+        '<button data-d="'+i+'" type="button">빼기</button></div></div>';
+    }).join("") : '<div class="empty">아직 없습니다.</div>';
+    $$("[data-d]", $(".kept",into)).forEach(function(x){
+      x.onclick=function(){ STATE[bi].kept.splice(+x.dataset.d,1); drawK(); };
+    });
+  }
+  $(".addb", into).onclick = function(){
+    var jp = $(".mw",into).value.trim(), y = $(".my",into).value.trim();
+    if (!jp){ alert("낱말을 적어 주세요."); return; }
+    words.push({jp:jp, y:y||jp, ko:"내가 적은 말"});
+    W = words.length-1; $(".mw",into).value=""; $(".my",into).value="";
+    drawW(); drawM();
+  };
+  $(".p", into).onclick = function(){ var m=made(); if(m) speak(m.jp,false); };
+  $(".s", into).onclick = function(){ var m=made(); if(m) speak(m.jp,true); };
+  var last = null;
+  $(".m", into).onclick = function(){
+    var m = made(); if (!m) return;
+    listen(m, $(".m",into), $(".rr",into), function(res){ last = res.score; });
+  };
+  $(".k", into).onclick = function(){
+    var m = made(); if (!m) return;
+    if (STATE[bi].kept.some(function(k){ return k.jp===m.jp; })){ alert("이미 담은 문장입니다."); return; }
+    STATE[bi].kept.push({jp:m.jp, y:m.y, ko:m.ko, score:last});
+    last = null; drawK();
+  };
+  drawW(); drawF(); drawM(); drawK();
+}
+
+/* 30초 녹음 */
+function drawRecord(b, into, bi){
+  into.innerHTML =
+    '<div class="btns">' +
+      '<button class="act solid rb" type="button"'+(CAN_REC?"":" disabled")+'>'+IC.mic+'녹음 시작</button>' +
+      '<button class="act pb" type="button" disabled>'+IC.play+'들어 보기</button>' +
+      '<button class="act db" type="button" disabled>다시 녹음</button></div>' +
+    '<p class="dim rs">'+(CAN_REC?"아직 녹음하지 않았습니다.":"이 기기에서는 녹음이 되지 않습니다.")+'</p>' +
+    '<audio class="ra" controls style="width:100%;margin-top:10px;display:none"></audio>';
+  var REC=null, CH=[], MIME="", TICK=null, LEFT=30;
+  var rb=$(".rb",into), pb=$(".pb",into), db=$(".db",into), rs=$(".rs",into), ra=$(".ra",into);
+  rb.onclick = function(){
+    if (REC && REC.state==="recording"){ REC.stop(); return; }
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      MIME = pickMime();
+      REC = MIME ? new MediaRecorder(stream,{mimeType:MIME}) : new MediaRecorder(stream);
+      MIME = REC.mimeType || MIME || "audio/webm"; CH=[];
+      REC.ondataavailable=function(e){ if(e.data&&e.data.size) CH.push(e.data); };
+      REC.onstop=function(){
+        stream.getTracks().forEach(function(t){ t.stop(); });
+        clearInterval(TICK);
+        var blob = new Blob(CH,{type:MIME});
+        STATE[bi].audio = blob; STATE[bi].mime = MIME;
+        ra.src = URL.createObjectURL(blob); ra.style.display="block";
+        rb.classList.remove("rec"); rb.innerHTML = IC.mic+"녹음 시작";
+        pb.disabled=false; db.disabled=false;
+        rs.textContent = "녹음했습니다 ("+Math.round(blob.size/1024)+"KB). 들어 보고 아래에서 보내 주세요.";
+      };
+      LEFT=30; REC.start();
+      rb.classList.add("rec"); rb.innerHTML = IC.stop+"멈추기";
+      rs.textContent = "녹음 중… 남은 시간 "+LEFT+"초";
+      TICK=setInterval(function(){ LEFT--; rs.textContent="녹음 중… 남은 시간 "+LEFT+"초";
+        if(LEFT<=0 && REC.state==="recording") REC.stop(); },1000);
+    }).catch(function(){ rs.textContent="마이크를 쓸 수 없습니다. 주소창 옆에서 허용해 주세요."; });
+  };
+  pb.onclick=function(){ ra.play(); };
+  db.onclick=function(){ STATE[bi].audio=null; ra.style.display="none"; ra.src="";
+    pb.disabled=true; db.disabled=true; rs.textContent="지웠습니다. 다시 녹음해 주세요."; };
+}
+
+/* 표 입력 */
+function drawRows(b, into, bi){
+  var html = '<table class="grid"><tr>' + b.cols.map(function(c){ return '<th>'+esc(c)+'</th>'; }).join("") + '</tr>';
+  for (var r=0;r<b.rows;r++){
+    html += '<tr>' + b.cols.map(function(_,c){
+      return '<td><input data-r="'+r+'" data-c="'+c+'"></td>'; }).join("") + '</tr>';
+  }
+  into.innerHTML = html + '</table>';
+  $$("input", into).forEach(function(x){
+    x.oninput = function(){
+      var r=+x.dataset.r, c=+x.dataset.c;
+      STATE[bi].rows[r] = STATE[bi].rows[r] || [];
+      STATE[bi].rows[r][c] = x.value;
+    };
+  });
+}
+
+/* 자유 서술 */
+function drawWrite(b, into, bi){
+  into.innerHTML = b.short
+    ? '<input class="wone" placeholder="'+esc(b.placeholder||"")+'">'
+    : '<textarea class="wmany" rows="3" placeholder="'+esc(b.placeholder||"")+'"></textarea>';
+  var el = $(".wone",into) || $(".wmany",into);
+  el.oninput = function(){ STATE[bi].text = el.value; };
+}
+
+/* ── 제출 ──────────────────────────────────────────────────── */
+function collect(){
+  var lines = [], sc = [], audio = null, mime = "";
+  L.blocks.forEach(function(b, i){
+    var s = STATE[i];
+    if (s.scores && s.scores.length){
+      s.scores.forEach(function(v){ if (v!=null) sc.push(v); });
+      var got = s.scores.filter(function(v){ return v!=null; });
+      if (got.length) lines.push("[" + b.title + "] 말하기 " + got.join("·") + "점");
+    }
+    if (s.kept && s.kept.length){
+      s.kept.forEach(function(k){ if (k.score!=null) sc.push(k.score); });
+      lines.push("[" + b.title + "] " + s.kept.map(function(k){ return k.jp; }).join(" / "));
+    }
+    if (s.rows && s.rows.length){
+      var rr = s.rows.filter(function(r){ return r && r.join("").trim(); })
+                     .map(function(r){ return r.join(" · "); });
+      if (rr.length) lines.push("[" + b.title + "] " + rr.join(" / "));
+    }
+    if (s.text && s.text.trim()) lines.push("[" + b.title + "] " + s.text.trim());
+    if (s.audio){ audio = s.audio; mime = s.mime; }
+  });
+  return { work: lines.join("\n"), score: sc.length
+    ? Math.round(sc.reduce(function(a,b){return a+b;},0)/sc.length) : "", audio: audio, mime: mime };
+}
+
+$("#send").onclick = function(){
+  if (!meOk()){ alert("먼저 차시 목록 화면에서 반·번호·이름을 적어 주세요."); location.href="./"; return; }
+  var c = collect();
+  if (!c.work && !c.audio){ alert("아직 한 것이 없습니다. 활동을 해 본 뒤에 보내 주세요."); return; }
+  $("#send").disabled = true;
+  $("#sendState").textContent = c.audio ? "녹음을 담는 중…" : "보내는 중…";
+  (c.audio ? blobToBase64(c.audio) : Promise.resolve("")).then(function(b64){
+    $("#sendState").textContent = "보내는 중…";
+    return submit({ cls:ME.cls, no:ME.no, name:ME.name, lesson:N,
+                    score:c.score, work:c.work, audio:b64, mime:c.mime });
+  }).then(function(){
+    markDone(N, c.score);
+    $("#sendState").textContent = "보냈습니다. 선생님이 보시고 다음 시간에 말씀을 남겨 주십니다.";
+  }).catch(function(){
+    $("#sendState").textContent = "보내지 못했습니다. 인터넷을 확인하고 다시 눌러 주세요.";
+  }).then(function(){ $("#send").disabled = false; });
+};
+
+$("#copy").onclick = function(){
+  var c = collect();
+  var t = meLabel() + " · " + N + "차시 " + L.title + "\n" + c.work +
+          (c.score===""?"":"\n평균 " + c.score + "점");
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(t).then(function(){ alert("복사했습니다."); });
+  else { var ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta);
+         ta.select(); document.execCommand("copy"); ta.remove(); alert("복사했습니다."); }
+};
+</script>
+</body>
+</html>

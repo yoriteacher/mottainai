@@ -3,592 +3,234 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1차시 · 공통 여섯 문장 발음 연습</title>
-<style>
-  :root{
-    --accent:#337054; --accent-d:#28593F; --ink:#111827; --ink2:#374151;
-    --gray:#6B7280; --gray2:#9CA3AF; --line:#E5E7EB; --bg:#F7F8FA;
-    --soft:#EAF1ED; --white:#fff;
-  }
-  *{box-sizing:border-box; margin:0; padding:0}
-  body{
-    font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-    background:var(--bg); color:var(--ink); line-height:1.6; -webkit-text-size-adjust:100%;
-  }
-  header{background:#000; color:#fff; padding:18px 20px}
-  header h1{font-size:20px; font-weight:700}
-  header p{font-size:13px; color:var(--gray2); margin-top:2px}
-  .wrap{max-width:860px; margin:0 auto; padding:18px 16px 60px}
-
-  .notice{
-    background:var(--soft); border-left:6px solid var(--accent);
-    padding:14px 16px; font-size:14px; color:var(--ink2); margin-bottom:18px;
-  }
-  .notice b{color:var(--accent)}
-  .bad{background:#FDECEA; border-left-color:#C0392B}
-  .bad b{color:#C0392B}
-
-  .me{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:20px}
-  .me label{font-size:14px; color:var(--gray)}
-  .me input{
-    font:inherit; font-size:15px; padding:9px 12px; border:1px solid var(--line);
-    background:#fff; border-radius:0; width:92px;
-  }
-  .me input:focus{outline:2px solid var(--accent); outline-offset:-2px}
-
-  .card{background:#fff; border:1px solid var(--line); margin-bottom:14px}
-  .card .top{border-top:5px solid var(--accent)}
-  .card .body{padding:16px 18px}
-  .num{
-    display:inline-flex; width:30px; height:30px; border-radius:50%;
-    background:var(--accent); color:#fff; font-size:15px; font-weight:700;
-    align-items:center; justify-content:center; margin-right:10px; flex:none;
-  }
-  .jp{font-size:27px; font-weight:700; letter-spacing:.5px; word-break:keep-all}
-  .yomi{font-size:15px; color:var(--gray); margin-top:6px}
-  .ko{font-size:15px; color:var(--ink2); margin-top:2px}
-  .tip{
-    display:inline-block; font-size:12.5px; color:var(--accent); background:var(--soft);
-    padding:3px 9px; margin-top:9px; font-weight:600;
-  }
-
-  .btns{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap}
-  button{
-    font:inherit; font-size:15px; font-weight:600; padding:11px 18px; cursor:pointer;
-    border:1px solid var(--accent); background:#fff; color:var(--accent);
-    display:inline-flex; align-items:center; gap:7px; border-radius:0;
-  }
-  button:hover{background:var(--soft)}
-  button.solid{background:var(--accent); color:#fff}
-  button.solid:hover{background:var(--accent-d)}
-  button:disabled{opacity:.45; cursor:not-allowed}
-  button.rec{background:#C0392B; border-color:#C0392B; color:#fff; animation:pulse 1s infinite}
-  @keyframes pulse{50%{opacity:.65}}
-  svg{width:17px; height:17px; fill:currentColor; flex:none}
-
-  .result{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); display:none}
-  .result.on{display:block}
-  .heard{font-size:17px; font-weight:700; word-break:break-all}
-  .heard .ok{color:var(--accent)}
-  .heard .no{color:#C0392B}
-  .bar{height:10px; background:var(--line); margin-top:10px; overflow:hidden}
-  .bar i{display:block; height:100%; background:var(--accent); width:0; transition:width .5s}
-  .score{display:flex; justify-content:space-between; align-items:baseline; margin-top:8px}
-  .score b{font-size:22px; color:var(--accent)}
-  .score span{font-size:14px; color:var(--gray)}
-
-  .sum{background:#000; color:#fff; padding:20px; margin-top:22px}
-  .sum h2{font-size:17px; margin-bottom:4px}
-  .sum .big{font-size:40px; font-weight:700; line-height:1.2}
-  .sum .sub{font-size:14px; color:var(--gray2)}
-  .sum .row{display:flex; gap:6px; margin-top:14px; flex-wrap:wrap}
-  .chip{
-    width:34px; height:34px; border:1px solid #3a3a3a; display:flex;
-    align-items:center; justify-content:center; font-size:13px; color:#8a8a8a;
-  }
-  .chip.done{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700}
-  .sum .btns{margin-top:16px}
-  .sum button{border-color:#fff; color:#fff; background:transparent}
-  .sum button:hover{background:#1c1c1c}
-
-  footer{font-size:13px; color:var(--gray); margin-top:26px; line-height:1.7}
-  code{background:#EFEFEF; padding:1px 5px; font-size:12.5px}
-
-  .sum button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
-  .sum button.primary:hover{background:var(--accent-d)}
-  .sum button.primary:disabled{background:#3a3a3a; border-color:#3a3a3a; color:#8a8a8a}
-
-  details#setup{margin:-8px 0 20px; font-size:13px; color:var(--gray)}
-  details#setup summary{cursor:pointer; color:var(--gray); padding:4px 0}
-  details#setup .small{margin:6px 0 8px; line-height:1.6}
-  details#setup input{
-    font:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--line);
-    width:min(100%,440px); background:#fff;
-  }
-  details#setup button{font-size:13px; padding:8px 14px; margin-left:6px}
-  .small{font-size:13px; color:var(--gray)}
-</style>
+<title>『もったいない』 일본어 회화 9차시</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <header>
-  <h1>1차시 · 공통 여섯 문장 발음 연습</h1>
-  <p>그림책 『もったいない』 9차시 프로젝트 · 고등학교 일본어 회화</p>
+  <h1>『もったいない』 일본어 회화</h1>
+  <p>아홉 시간 동안 물건 이야기로 시작해 나의 이야기로 끝냅니다.</p>
 </header>
 
 <div class="wrap">
 
-  <div id="env" class="notice">
-    <b>이렇게 하세요.</b> 문장마다 <b>듣기</b>를 먼저 누르고, 두세 번 따라 읽은 뒤 <b>말하기</b>를 누르세요.
-    말하기를 누르면 마이크가 켜집니다. 처음 한 번은 <b>“허용”</b>을 눌러 주세요.
-  </div>
-
-  <div class="me">
-    <label for="cls">반</label><input id="cls" inputmode="numeric" placeholder="3">
-    <label for="no">번호</label><input id="no" inputmode="numeric" placeholder="7">
-    <label for="nm">이름</label><input id="nm" style="width:110px" placeholder="김하윤">
-  </div>
-
-  <details id="setup">
-    <summary>선생님만 — 기록 주소 넣기</summary>
-    <p class="small">한 번만 넣어 두면 이 기기에서는 다음부터 그대로 씁니다.
-       주소 만드는 법은 <code>설치용_스크립트.gs</code> 아래쪽에 적혀 있습니다.</p>
-    <input id="hook" placeholder="https://script.google.com/macros/s/.../exec">
-    <button id="hookSave" type="button">저장</button>
-    <span id="hookState" class="small"></span>
-  </details>
-
-  <div id="list"></div>
-
-  <div class="card" id="recCard">
-    <div class="top"></div>
-    <div class="body">
-      <div style="display:flex;align-items:flex-start">
-        <span class="num">🎙</span>
-        <div style="flex:1">
-          <div style="font-size:20px;font-weight:700">여섯 문장 이어 읽기 · 30초 녹음</div>
-          <div class="ko" style="margin-top:6px">
-            위 여섯 문장을 처음부터 끝까지 이어 읽고 녹음해 냅니다.
-            여덟 번째 시간에 한 번 더 녹음해 오늘 것과 견주어 봅니다.
-          </div>
-          <div class="tip">이 녹음은 모든 기기에서 됩니다</div>
-        </div>
-      </div>
-      <div class="btns">
-        <button id="recBtn" type="button" class="solid">
-          <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg>
-          녹음 시작
-        </button>
-        <button id="recPlay" type="button" disabled>
-          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>들어 보기
-        </button>
-        <button id="recDrop" type="button" disabled>다시 녹음</button>
-      </div>
-      <div id="recState" class="small" style="margin-top:12px">아직 녹음하지 않았습니다.</div>
-      <audio id="recAudio" controls style="width:100%;margin-top:10px;display:none"></audio>
+  <!-- 나 고르기 -->
+  <section class="who" id="who">
+    <div class="row">
+      <div><b id="whoName">내가 누구인지 먼저 알려 주세요</b>
+        <p class="dim" id="whoSub">우리 반을 누르고 이름을 찾으세요.</p></div>
+      <button class="act" id="whoBtn" type="button" style="display:none">바꾸기</button>
     </div>
-  </div>
-
-  <div class="sum">
-    <h2>오늘의 발음 점수</h2>
-    <div class="big"><span id="avg">–</span><span style="font-size:22px">점</span></div>
-    <div class="sub" id="cnt">아직 연습하지 않았습니다</div>
-    <div class="row" id="chips"></div>
-    <div class="btns">
-      <button id="send" type="button" class="primary">
-        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
-        선생님께 보내기
-      </button>
-      <button id="copy" type="button">
-        <svg viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>
-        결과 복사하기
-      </button>
-      <button id="csv" type="button">
-        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-        파일로 내려받기
-      </button>
+    <div id="picker">
+      <div class="secs" id="secs"></div>
+      <div class="names" id="names"></div>
+      <div class="addw" id="manual" style="display:none">
+        <input id="mCls" placeholder="반 (예: 207)" style="max-width:120px">
+        <input id="mNo" placeholder="번호 (예: 3-2)" style="max-width:120px">
+        <input id="mName" placeholder="이름">
+        <button class="act solid" id="mOk" type="button">확인</button>
+      </div>
     </div>
-    <p id="sendState" class="sub" style="margin-top:12px"></p>
-  </div>
+  </section>
 
-  <footer>
-    <p><b>선생님께</b> — 이 화면은 인터넷 주소(https)로 열어야 마이크가 켜집니다.
-       파일을 두 번 눌러 여는 <code>file://</code> 방식으로는 말하기가 동작하지 않습니다.</p>
-    <p>말하기 채점은 <b>크롬·엣지</b>에서 됩니다. 아이폰 사파리에서는 듣기만 됩니다.</p>
-  </footer>
+  <div id="msg" class="notice" style="display:none"></div>
+
+  <!-- 아홉 차시 -->
+  <div class="lgrid" id="lgrid"></div>
+
+  <!-- 나의 성장 -->
+  <section class="grow" id="grow" style="display:none">
+    <h2>나의 성장</h2>
+    <p class="dim">점수를 매기려는 것이 아닙니다. 처음의 나와 지금의 나를 견주어 보는 자리입니다.</p>
+    <div id="growBody"></div>
+  </section>
+
+  <p class="dim" style="margin-top:26px;text-align:center">
+    흥진고등학교 일본어 회화 · 그림책 『もったいない』 프로젝트
+  </p>
 </div>
 
+<script src="core.js"></script>
+<script src="data.js"></script>
+<!-- 명단(roster.js)은 깃허브에 올리지 않습니다. 선생님 스크립트에서 받아옵니다.
+     로컬에서 시험할 때만 아래 줄의 주석을 벗기세요.
+<script src="roster.js"></script> -->
 <script>
 "use strict";
 
-/* ── 공통 여섯 문장 ─────────────────────────────────────────────
-   alt = 음성 인식이 한자로 돌려줄 때를 대비한 같은 뜻의 표기들 */
-var SENT = [
-  { jp:"もったいない。", yomi:"못타이나이", ko:"아깝다",
-    tip:"작은 っ 에서 한 박자 쉬어요",
-    check:[["っ","작은 っ 에서 한 박자 쉬었나요? 「못-타이나이」"]],
-    alt:["もったいない","勿体ない","勿体無い","モッタイナイ"] },
-  { jp:"まだ つかえます。", yomi:"마다 츠카에마스", ko:"아직 쓸 수 있어요",
-    tip:"",
-    alt:["まだつかえます","まだ使えます"] },
-  { jp:"たいせつに つかいましょう。", yomi:"타이세츠니 츠카이마쇼-", ko:"소중히 씁시다",
-    tip:"마지막 しょう 는 길게",
-    alt:["たいせつにつかいましょう","大切に使いましょう"] },
-  { jp:"すてないで ください。", yomi:"스테나이데 쿠다사이", ko:"버리지 마세요",
-    tip:"",
-    alt:["すてないでください","捨てないでください"] },
-  { jp:"のこさないで たべます。", yomi:"노코사나이데 타베마스", ko:"남기지 않고 먹어요",
-    tip:"",
-    alt:["のこさないでたべます","残さないで食べます"] },
-  { jp:"じぶんの のうりょくも たからです。", yomi:"지분노 노-료쿠모 타카라데스", ko:"나의 재능도 보물이에요",
-    tip:"のう 는 길게, りょ 는 한 박자로 붙여서",
-    check:[["のう","のう 를 길게 두 박자로 늘였나요? 「노-료쿠」"],
-           ["りょ","りょ 를 한 박자로 붙여 읽었나요?"]],
-    alt:["じぶんののうりょくもたからです","自分の能力も宝です","自分の能力も財です"] }
-];
+/* ── 나 고르기 ─────────────────────────────────────────────── */
+var SEC = null, ROSTER = null, SECTIONS = [];
+try { SEC = localStorage.getItem("mottainai_sec"); } catch(e){}
 
-var SCORE = new Array(SENT.length).fill(null);
-var HEARD = new Array(SENT.length).fill("");
-var $ = function(id){ return document.getElementById(id); };
-
-/* ── 브라우저 확인 ─────────────────────────────────────────── */
-var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-var CAN_MIC = !!SR && (location.protocol === "https:" || location.hostname === "localhost");
-var SECURE = (location.protocol === "https:" || location.hostname === "localhost");
-var CAN_REC = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
-                 window.MediaRecorder && SECURE);
-
-if (!SECURE){
-  $("env").className = "notice bad";
-  $("env").innerHTML = "<b>지금 주소에서는 마이크를 쓸 수 없습니다.</b> " +
-    "선생님이 알려 주신 <b>https 주소</b>로 다시 열어 주세요. 듣기는 그대로 됩니다.";
-} else if (!SR){
-  /* 아이폰·아이패드가 여기에 해당합니다 */
-  $("env").innerHTML = "<b>이렇게 하세요.</b> 문장마다 <b>듣기</b>를 누르고 두세 번 따라 읽으세요. " +
-    "이 기기는 말하기 자동 채점이 되지 않지만, 맨 아래 <b>30초 녹음</b>은 그대로 됩니다. " +
-    "녹음을 내면 선생님이 듣고 봐 주십니다.";
-}
-
-/* ── 일본어 정규화 · 유사도 ─────────────────────────────────── */
-function norm(s){
-  return String(s)
-    .replace(/[。、．，,.!?！？\s　]/g, "")
-    .replace(/[ァ-ヶ]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0x60); }); // 가타카나→히라가나
-}
-function lev(a, b){
-  var m = a.length, n = b.length, i, j, prev = [], cur = [];
-  if (!m) return n;
-  if (!n) return m;
-  for (j = 0; j <= n; j++) prev[j] = j;
-  for (i = 1; i <= m; i++){
-    cur[0] = i;
-    for (j = 1; j <= n; j++){
-      cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
-    }
-    prev = cur.slice();
-  }
-  return prev[n];
-}
-/* 여러 표기 가운데 가장 가까운 것을 찾아 점수와 그 표기를 함께 돌려준다 */
-function match(said, targets){
-  var s = norm(said), best = 0, bestT = targets[0];
-  targets.forEach(function(t){
-    var g = norm(t);
-    var v = 1 - lev(s, g) / Math.max(s.length, g.length, 1);
-    if (v > best){ best = v; bestT = t; }
-  });
-  return { score: Math.max(0, Math.round(best * 100)), target: bestT };
-}
-function similarity(said, targets){ return match(said, targets).score; }
-
-/* 학생이 스스로 견주도록, 가장 가까운 표기와 맞춘 글자를 초록으로 보여 준다 */
-function mark(said, target){
-  var s = norm(said), g = norm(target), out = "";
-  for (var i = 0; i < s.length; i++){
-    out += (g.indexOf(s[i]) > -1)
-      ? '<span class="ok">' + s[i] + '</span>'
-      : '<span class="no">' + s[i] + '</span>';
-  }
-  return out || '<span class="no">(들리지 않았습니다)</span>';
-}
-
-/* 촉음·장음·요음을 빠뜨렸는지 짚어 준다.
-   한자로 알아들었을 때는 소리를 알 수 없으므로 넘어간다. */
-function hints(i, said){
-  var s = norm(said);
-  if (/[一-龯]/.test(s)) return [];
-  var list = SENT[i].check || [];
-  return list.filter(function(c){ return s.indexOf(c[0]) === -1; })
-             .map(function(c){ return c[1]; });
-}
-
-/* ── 듣기 ──────────────────────────────────────────────────── */
-var VOICE = null;
-function pickVoice(){
-  var vs = speechSynthesis.getVoices() || [];
-  VOICE = vs.filter(function(v){ return /^ja/i.test(v.lang); })[0] || null;
-}
-pickVoice();
-if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = pickVoice;
-
-function speak(text, slow){
-  speechSynthesis.cancel();
-  var u = new SpeechSynthesisUtterance(text);
-  u.lang = "ja-JP";
-  u.rate = slow ? 0.6 : 0.85;
-  if (VOICE) u.voice = VOICE;
-  speechSynthesis.speak(u);
-}
-
-/* ── 화면 그리기 ───────────────────────────────────────────── */
-var ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-var ICON_SLOW = '<svg viewBox="0 0 24 24"><path d="M4 5v14l9-7zM15 5v14l2 0V5zM19 5v14l2 0V5z"/></svg>';
-var ICON_MIC  = '<svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg>';
-
-function draw(){
-  $("list").innerHTML = SENT.map(function(s, i){
-    return '<div class="card"><div class="top"></div><div class="body">' +
-      '<div style="display:flex;align-items:flex-start">' +
-        '<span class="num">' + (i+1) + '</span>' +
-        '<div style="flex:1">' +
-          '<div class="jp">' + s.jp + '</div>' +
-          '<div class="yomi">' + s.yomi + '</div>' +
-          '<div class="ko">' + s.ko + '</div>' +
-          (s.tip ? '<div class="tip">' + s.tip + '</div>' : '') +
-        '</div>' +
-      '</div>' +
-      '<div class="btns">' +
-        '<button type="button" data-play="' + i + '">' + ICON_PLAY + '듣기</button>' +
-        '<button type="button" data-slow="' + i + '">' + ICON_SLOW + '천천히</button>' +
-        '<button type="button" class="solid" data-mic="' + i + '"' +
-          (CAN_MIC ? "" : " disabled") + '>' + ICON_MIC + '말하기</button>' +
-      '</div>' +
-      '<div class="result" id="r' + i + '"></div>' +
-    '</div></div>';
+function drawSecs(){
+  $("#secs").innerHTML = SECTIONS.map(function(s){
+    return '<button data-s="'+s+'" type="button"'+(SEC===s?' class="on"':'')+'>'+s+'반</button>';
   }).join("");
-
-  [].forEach.call(document.querySelectorAll("[data-play]"), function(b){
-    b.onclick = function(){ speak(SENT[+b.dataset.play].jp, false); };
+  $$("#secs button").forEach(function(b){
+    b.onclick = function(){ SEC = b.dataset.s;
+      try { localStorage.setItem("mottainai_sec", SEC); } catch(e){}
+      drawSecs(); drawNames(); };
   });
-  [].forEach.call(document.querySelectorAll("[data-slow]"), function(b){
-    b.onclick = function(){ speak(SENT[+b.dataset.slow].jp, true); };
-  });
-  [].forEach.call(document.querySelectorAll("[data-mic]"), function(b){
-    b.onclick = function(){ listen(+b.dataset.mic, b); };
-  });
-  sum();
 }
-
-/* ── 말하기 · 채점 ─────────────────────────────────────────── */
-var BUSY = false;
-function listen(i, btn){
-  if (BUSY || !CAN_MIC) return;
-  BUSY = true;
-  speechSynthesis.cancel();
-
-  var rec = new SR();
-  rec.lang = "ja-JP";
-  rec.interimResults = false;
-  rec.maxAlternatives = 5;
-
-  var label = btn.innerHTML;
-  btn.className = "rec"; btn.innerHTML = ICON_MIC + "듣는 중…";
-  var box = $("r" + i);
-  box.className = "result on";
-  box.innerHTML = '<p style="color:var(--gray);font-size:14px">지금 말해 보세요.</p>';
-
-  rec.onresult = function(e){
-    var cands = [];
-    for (var k = 0; k < e.results[0].length; k++) cands.push(e.results[0][k].transcript);
-    var best = 0, bestTxt = cands[0] || "", bestTarget = SENT[i].alt[0];
-    cands.forEach(function(c){
-      var m = match(c, SENT[i].alt);
-      if (m.score > best){ best = m.score; bestTxt = c; bestTarget = m.target; }
-    });
-    SCORE[i] = best; HEARD[i] = bestTxt;
-    show(i, bestTxt, best, bestTarget);
-    sum();
-  };
-  rec.onerror = function(e){
-    box.innerHTML = '<p style="color:#C0392B;font-size:14px">' +
-      (e.error === "not-allowed"
-        ? "마이크가 막혀 있습니다. 주소창 왼쪽 자물쇠를 눌러 마이크를 허용해 주세요."
-        : e.error === "no-speech"
-        ? "소리가 들리지 않았습니다. 조금 더 크게 말해 보세요."
-        : "잠깐 문제가 있었습니다. 다시 눌러 주세요.") + '</p>';
-  };
-  rec.onend = function(){
-    BUSY = false; btn.className = "solid"; btn.innerHTML = label;
-  };
-  try { rec.start(); } catch(err){ BUSY = false; btn.className = "solid"; btn.innerHTML = label; }
-}
-
-function show(i, said, v, target){
-  var hs = hints(i, said);
-  var msg = hs.length ? "소리 하나만 더 살펴봐요"
-          : v >= 90 ? "아주 좋아요" : v >= 70 ? "좋아요"
-          : v >= 50 ? "조금만 더 또박또박" : "다시 한 번 들어 볼까요";
-  $("r" + i).innerHTML =
-    '<div style="font-size:13px;color:var(--gray)">이렇게 들렸어요</div>' +
-    '<div class="heard">' + mark(said, target || SENT[i].alt[0]) + '</div>' +
-    '<div class="bar"><i style="width:' + v + '%"></i></div>' +
-    '<div class="score"><span>' + msg + '</span><b>' + v + '점</b></div>' +
-    hs.map(function(t){
-      return '<p class="tip" style="display:block;margin-top:10px">' + t + '</p>';
-    }).join("");
-}
-
-/* ── 종합 ──────────────────────────────────────────────────── */
-function sum(){
-  var got = SCORE.filter(function(v){ return v != null; });
-  var a = got.length ? Math.round(got.reduce(function(x,y){return x+y;},0) / got.length) : null;
-  $("avg").textContent = a == null ? "–" : a;
-  $("cnt").textContent = got.length
-    ? got.length + " / " + SENT.length + " 문장 연습함"
-    : "아직 연습하지 않았습니다";
-  $("chips").innerHTML = SENT.map(function(_, i){
-    return '<div class="chip' + (SCORE[i] != null ? " done" : "") + '">' +
-           (SCORE[i] != null ? SCORE[i] : (i+1)) + '</div>';
+function drawNames(){
+  if (!ROSTER){ $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">명단을 불러오는 중…</p>'; return; }
+  if (!SEC || !ROSTER[SEC]){ $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">위에서 우리 반을 먼저 눌러 주세요.</p>'; return; }
+  $("#names").innerHTML = ROSTER[SEC].map(function(r,i){
+    var on = (ME.cls===SEC && ME.no===r[0]+"-"+r[1] && ME.name===r[2]);
+    return '<button data-i="'+i+'" type="button"'+(on?' class="on"':'')+'>'+esc(r[2])+
+           '<small>'+esc(r[0])+'-'+esc(r[1])+'</small></button>';
   }).join("");
-}
-
-/* ── 결과 내보내기 ─────────────────────────────────────────── */
-function lines(){
-  var who = ($("cls").value || "?") + "반 " + ($("no").value || "?") + "번 " + ($("nm").value || "이름");
-  var got = SCORE.filter(function(v){ return v != null; });
-  var a = got.length ? Math.round(got.reduce(function(x,y){return x+y;},0)/got.length) : 0;
-  var out = [who + " · 1차시 공통 여섯 문장 · 평균 " + a + "점"];
-  SENT.forEach(function(s, i){
-    out.push((i+1) + ". " + s.jp + "  →  " +
-             (SCORE[i] == null ? "연습 안 함" : SCORE[i] + "점 (들린 말: " + HEARD[i] + ")"));
-  });
-  return out;
-}
-$("copy").onclick = function(){
-  var t = lines().join("\n");
-  if (navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(t).then(function(){ alert("복사했습니다. 구글 폼에 붙여넣으세요."); });
-  } else {
-    var ta = document.createElement("textarea");
-    ta.value = t; document.body.appendChild(ta); ta.select();
-    document.execCommand("copy"); ta.remove();
-    alert("복사했습니다. 구글 폼에 붙여넣으세요.");
-  }
-};
-/* ── 30초 녹음 (아이폰 포함 모든 기기) ──────────────────────── */
-var REC = null, CHUNKS = [], BLOB = null, MIME = "", TICK = null, LEFT = 30;
-
-function pickMime(){
-  var c = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac", ""];
-  for (var i = 0; i < c.length; i++){
-    if (!c[i]) return "";                       // 브라우저가 알아서 고르게 둔다
-    if (window.MediaRecorder && MediaRecorder.isTypeSupported(c[i])) return c[i];
-  }
-  return "";
-}
-function recState(msg){ $("recState").textContent = msg; }
-
-if (!CAN_REC){
-  $("recBtn").disabled = true;
-  recState("이 기기에서는 녹음이 되지 않습니다. 선생님께 말씀해 주세요.");
-}
-
-$("recBtn").onclick = function(){
-  if (REC && REC.state === "recording"){ REC.stop(); return; }
-  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-    MIME = pickMime();
-    REC = MIME ? new MediaRecorder(stream, {mimeType:MIME}) : new MediaRecorder(stream);
-    MIME = REC.mimeType || MIME || "audio/webm";
-    CHUNKS = [];
-    REC.ondataavailable = function(e){ if (e.data && e.data.size) CHUNKS.push(e.data); };
-    REC.onstop = function(){
-      stream.getTracks().forEach(function(t){ t.stop(); });
-      clearInterval(TICK);
-      BLOB = new Blob(CHUNKS, {type: MIME});
-      $("recAudio").src = URL.createObjectURL(BLOB);
-      $("recAudio").style.display = "block";
-      $("recBtn").className = "solid";
-      $("recBtn").innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg>녹음 시작';
-      $("recPlay").disabled = false; $("recDrop").disabled = false;
-      recState("녹음했습니다 (" + Math.round(BLOB.size/1024) + "KB). 들어 보고, 아래에서 보내 주세요.");
+  $$("#names button").forEach(function(b){
+    b.onclick = function(){
+      var r = ROSTER[SEC][+b.dataset.i];
+      ME.cls = SEC; ME.no = r[0]+"-"+r[1]; ME.name = r[2];
+      saveMe(); drawNames(); showMe(); load();
     };
-    LEFT = 30;
-    REC.start();
-    $("recBtn").className = "rec";
-    $("recBtn").innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>멈추기';
-    recState("녹음 중… 남은 시간 " + LEFT + "초");
-    TICK = setInterval(function(){
-      LEFT--;
-      recState("녹음 중… 남은 시간 " + LEFT + "초");
-      if (LEFT <= 0 && REC.state === "recording") REC.stop();
-    }, 1000);
-  }).catch(function(){
-    recState("마이크를 쓸 수 없습니다. 주소창 옆에서 마이크를 허용해 주세요.");
-  });
-};
-$("recPlay").onclick = function(){ $("recAudio").play(); };
-$("recDrop").onclick = function(){
-  BLOB = null; $("recAudio").style.display = "none"; $("recAudio").src = "";
-  $("recPlay").disabled = true; $("recDrop").disabled = true;
-  recState("지웠습니다. 다시 녹음해 주세요.");
-};
-
-function blobToBase64(b){
-  return new Promise(function(res, rej){
-    var r = new FileReader();
-    r.onload = function(){ res(String(r.result).split(",")[1] || ""); };
-    r.onerror = rej;
-    r.readAsDataURL(b);
   });
 }
-
-/* ── 선생님 시트로 보내기 ──────────────────────────────────── */
-/* 선생님 시트로 보내는 주소.
-   2026-08-02 배포분입니다. 스크립트를 고쳐 새로 배포하면 이 줄만 바꾸면 됩니다. */
-var HOOK_DEFAULT =
-  "https://script.google.com/macros/s/AKfycbxAcwPN1WwC6bSQhGwQGH9i-ecfE2NHcDrlFQyWtcv-2e_nVId37g0SQC7nlZ0Lc2Tm9A/exec";
-var HOOK = HOOK_DEFAULT;
-try { HOOK = localStorage.getItem("mottainai_hook") || HOOK_DEFAULT; } catch(e){}
-$("hook").value = HOOK;
-function hookState(){
-  $("hookState").textContent = HOOK ? "저장되어 있습니다" : "아직 넣지 않았습니다";
-  $("send").disabled = !HOOK;
-  if (!HOOK) $("sendState").textContent =
-    "기록 주소가 없어 보내기가 꺼져 있습니다. 결과 복사하기로 구글 폼에 붙여넣어 주세요.";
-  else $("sendState").textContent = "";
-}
-$("hookSave").onclick = function(){
-  HOOK = $("hook").value.trim();
-  try { localStorage.setItem("mottainai_hook", HOOK); } catch(e){}
-  hookState();
-};
-hookState();
-
-$("send").onclick = function(){
-  var got = SCORE.filter(function(v){ return v != null; });
-  if (!got.length && !BLOB){
-    alert("먼저 말하기를 해 보거나, 맨 아래에서 30초 녹음을 해 주세요."); return;
+function showMe(){
+  if (meOk()){
+    $("#whoName").textContent = ME.cls + "반 · " + ME.name;
+    $("#whoSub").textContent = "원래 반 " + ME.no.replace("-", "반 ") + "번";
+    $("#picker").style.display = "none";
+    $("#whoBtn").style.display = "inline-flex";
+  } else {
+    $("#whoName").textContent = "내가 누구인지 먼저 알려 주세요";
+    $("#whoSub").textContent = "우리 반을 누르고 이름을 찾으세요.";
+    $("#picker").style.display = "block";
+    $("#whoBtn").style.display = "none";
   }
-  if (!$("nm").value.trim()){ alert("이름을 적어 주세요. 이름이 있어야 선생님이 찾을 수 있습니다."); return; }
-  var avg = got.length ? Math.round(got.reduce(function(x,y){return x+y;},0) / got.length) : "";
+}
+$("#whoBtn").onclick = function(){
+  $("#picker").style.display = "block"; $("#whoBtn").style.display = "none"; drawNames();
+};
 
-  $("sendState").textContent = BLOB ? "녹음을 담는 중…" : "보내는 중…";
-  $("send").disabled = true;
+/* 명단이 안 올 때를 위한 직접 적기 */
+$("#mOk").onclick = function(){
+  var n = $("#mName").value.trim();
+  if (!n){ alert("이름을 적어 주세요."); return; }
+  ME.cls = $("#mCls").value.trim() || "?";
+  ME.no  = $("#mNo").value.trim() || "?";
+  ME.name = n;
+  saveMe(); showMe(); load();
+};
 
-  (BLOB ? blobToBase64(BLOB) : Promise.resolve("")).then(function(b64){
-    var body = JSON.stringify({
-      cls: $("cls").value.trim(), no: $("no").value.trim(), name: $("nm").value.trim(),
-      lesson: 1, scores: SCORE, avg: avg, heard: HEARD,
-      audio: b64, mime: MIME
+showMe(); drawSecs(); drawNames();
+
+/* 오래 걸리면 기다리지 않고 직접 적을 수 있게 열어 줍니다 */
+var slow = setTimeout(function(){
+  if (!ROSTER){
+    $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">' +
+      '명단을 부르는 중입니다. 기다리기 답답하면 아래에 직접 적어도 됩니다.</p>';
+    $("#manual").style.display = "flex";
+  }
+}, 4000);
+
+fetchRoster().then(function(R){
+  clearTimeout(slow);
+  if (!R){
+    $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">' +
+      '명단을 불러오지 못했습니다. 아래에 직접 적어 주세요.</p>';
+    $("#manual").style.display = "flex";
+    return;
+  }
+  ROSTER = R; SECTIONS = Object.keys(R).sort();
+  if (SECTIONS.indexOf(SEC) === -1) SEC = null;
+  $("#manual").style.display = "none";
+  drawSecs(); drawNames();
+});
+
+/* ── 아홉 차시 카드 ────────────────────────────────────────── */
+function drawCards(rows){
+  var byN = {}, local = localDone();
+  (rows||[]).forEach(function(r){ byN[r.lesson] = r; });
+
+  var next = 1;
+  for (var i=1;i<=9;i++) if (byN[i] || local[i]) next = Math.min(9, i+1);
+
+  $("#lgrid").innerHTML = LESSONS.map(function(L){
+    var r = byN[L.no], lo = local[L.no];
+    var done = !!(r || lo);
+    var state = r ? ("낸 날 " + (r.when||"") + (r.score!=null&&r.score!==""?" · "+r.score+"점":""))
+              : lo ? "보냈습니다"
+              : "아직";
+    return '<a class="lcard'+(done?" done":"")+(L.no===next&&!done?" now":"")+
+      '" href="lesson.html?n='+L.no+'">' +
+      (r && r.note ? '<span class="dot" title="선생님 말씀이 있습니다"></span>' : '') +
+      '<div class="n">'+L.no+'차시</div>' +
+      '<div class="t">'+esc(L.icon)+' '+esc(L.title)+'</div>' +
+      '<div class="s">'+esc(state)+'</div></a>';
+  }).join("");
+}
+
+/* ── 나의 성장 ─────────────────────────────────────────────── */
+function drawGrow(rows){
+  var byN = {}; rows.forEach(function(r){ byN[r.lesson] = r; });
+  var done = rows.length;
+  var first = byN[1] && byN[1].score, last = byN[8] && byN[8].score;
+  var notes = rows.filter(function(r){ return r.note; });
+  var made = 0;
+  rows.forEach(function(r){ made += (String(r.work||"").match(/。/g)||[]).length; });
+
+  var h = '<div class="gsum">' +
+    '<div><b>'+done+' / 9</b><span>보낸 차시</span></div>' +
+    '<div><b>'+made+'</b><span>내가 만든 일본어 문장</span></div>' +
+    '<div><b>'+notes.length+'</b><span>선생님 말씀</span></div></div>';
+
+  if (first!=null || last!=null){
+    h += '<p class="lab" style="margin-top:20px">같은 여섯 문장 · 첫 시간과 여덟째 시간</p>';
+    [["첫 시간(1차시)", first], ["다듬은 뒤(8차시)", last]].forEach(function(p){
+      var v = (p[1]==null ? 0 : p[1]);
+      h += '<div class="gline"><span class="lb">'+p[0]+'</span>' +
+           '<span class="bar"><i style="width:'+v+'%"></i></span>' +
+           '<span class="vv">'+(p[1]==null ? "—" : v+"점")+'</span></div>';
     });
-    $("sendState").textContent = "보내는 중…";
-    return fetch(HOOK, { method:"POST", mode:"no-cors",
-                         headers:{"Content-Type":"text/plain;charset=utf-8"}, body:body });
-  }).then(function(){
-    $("sendState").textContent = BLOB
-      ? "보냈습니다. 점수와 녹음이 함께 선생님께 갑니다."
-      : "보냈습니다. 선생님 화면에 기록됩니다.";
-  }).catch(function(){
-    $("sendState").textContent =
-      "보내지 못했습니다. 인터넷을 확인하고 다시 눌러 주세요. 급하면 결과 복사하기를 쓰세요.";
-  }).then(function(){ $("send").disabled = false; });
-};
+    if (first!=null && last!=null){
+      var d = last - first;
+      h += '<p class="dim" style="margin-top:10px">' +
+        (d > 0 ? "여덟째 시간에 " + d + "점 올랐습니다. 같은 문장인데 소리가 달라졌습니다."
+         : d === 0 ? "점수는 같지만, 그동안 문장을 만들어 본 경험이 남았습니다."
+         : "점수는 조금 내렸지만 더 빠르게 읽었을 수 있습니다. 녹음을 다시 들어 보세요.") + '</p>';
+    }
+  }
 
-$("csv").onclick = function(){
-  var who = [$("cls").value, $("no").value, $("nm").value];
-  var head = ["반","번호","이름","차시"].concat(SENT.map(function(_,i){ return (i+1)+"번문장"; })).concat(["평균"]);
-  var got = SCORE.filter(function(v){ return v != null; });
-  var a = got.length ? Math.round(got.reduce(function(x,y){return x+y;},0)/got.length) : "";
-  var row = who.concat([1]).concat(SCORE.map(function(v){ return v == null ? "" : v; })).concat([a]);
-  var csv = "﻿" + head.join(",") + "\r\n" + row.join(",");
-  var b = new Blob([csv], {type:"text/csv;charset=utf-8"});
-  var el = document.createElement("a");
-  el.href = URL.createObjectURL(b);
-  el.download = "1차시_발음점수_" + (who[2] || "학생") + ".csv";
-  document.body.appendChild(el); el.click(); el.remove();
-};
+  if (notes.length){
+    h += '<p class="lab" style="margin-top:22px">선생님 말씀</p><div class="notes">' +
+      notes.map(function(r){
+        return '<div class="note1"><i>'+r.lesson+'차시 · '+esc(LESSONS[r.lesson-1].title)+'</i>'+
+               esc(r.note)+'</div>';
+      }).join("") + '</div>';
+  }
+  $("#growBody").innerHTML = h;
+  $("#grow").style.display = "block";
+}
 
-draw();
+/* ── 불러오기 ──────────────────────────────────────────────── */
+function load(){
+  if (!meOk()){ drawCards([]); $("#grow").style.display="none"; return; }
+  $("#msg").style.display = "block";
+  $("#msg").className = "notice";
+  $("#msg").textContent = "내 기록을 불러오는 중…";
+  fetchMine().then(function(rows){
+    if (rows === null){
+      $("#msg").className = "notice bad";
+      $("#msg").innerHTML = "<b>기록을 불러오지 못했습니다.</b> 인터넷이 잠깐 끊겼을 수 있습니다. " +
+        "그래도 활동과 보내기는 됩니다.";
+      drawCards([]); return;
+    }
+    $("#msg").style.display = "none";
+    drawCards(rows);
+    if (rows.length) drawGrow(rows); else $("#grow").style.display = "none";
+    var un = rows.filter(function(r){ return r.note; });
+    if (un.length){
+      $("#msg").style.display = "block";
+      $("#msg").className = "notice good";
+      $("#msg").innerHTML = "<b>선생님이 " + un.length + "개의 말씀을 남기셨습니다.</b> " +
+        "아래 「나의 성장」에서 읽어 보세요.";
+    }
+  });
+}
+drawCards([]); load();
 </script>
 </body>
 </html>
