@@ -9,6 +9,7 @@
 <body>
 <header>
   <a class="back" href="./">← 차시 목록</a>
+  <a class="back" href="help.html" style="float:right">사용 방법</a>
   <h1 id="hTitle">…</h1>
   <p id="hSub"></p>
 </header>
@@ -38,6 +39,9 @@
 <script src="data.js"></script>
 <script>
 "use strict";
+/* 인증번호 없이 바로 들어온 경우 첫 화면으로 보냅니다 */
+if (!CODE || !meOk()) location.replace("./");
+
 var N = Math.max(1, Math.min(9, parseInt(
   (location.search.match(/[?&]n=(\d+)/) || [])[1] || "1", 10)));
 var L = LESSONS[N-1];

@@ -11,11 +11,20 @@ var $$ = function(s, r){ return [].slice.call((r||document).querySelectorAll(s))
 var esc = function(s){ return String(s==null?"":s)
   .replace(/[&<>"]/g, function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]; }); };
 
+/* ── 인증번호 ──────────────────────────────────────────────── */
+/* 선생님이 수업 시간에 알려 주시는 번호입니다.
+   맞는지는 선생님 스크립트가 확인합니다. 이 파일에는 번호가 들어 있지 않습니다. */
+var CODE = "";
+try { CODE = localStorage.getItem("mottainai_code") || ""; } catch(e){}
+function saveCode(c){ CODE = c; try { localStorage.setItem("mottainai_code", c); } catch(e){} }
+function clearCode(){ CODE = "";
+  try { localStorage.removeItem("mottainai_code"); localStorage.removeItem("mottainai_roster"); } catch(e){} }
+
 /* ── 학생 정보 ─────────────────────────────────────────────── */
 var ME = { cls:"", no:"", name:"" };
 try { ME = JSON.parse(localStorage.getItem("mottainai_me")) || ME; } catch(e){}
 function saveMe(){ try { localStorage.setItem("mottainai_me", JSON.stringify(ME)); } catch(e){} }
-function meOk(){ return !!(ME.name && String(ME.name).trim()); }
+function meOk(){ return !!(CODE && ME.name && String(ME.name).trim()); }
 function meLabel(){ return (ME.cls||"?") + "반 " + (ME.no||"?") + "번 " + (ME.name||""); }
 
 /* 조사 골라 넣기 — {을}/{은}/{이}/{와} 자리에 받침에 맞는 것을 넣습니다 */
@@ -147,6 +156,7 @@ function blobToBase64(b){
 
 /* ── 서버 ──────────────────────────────────────────────────── */
 function submit(payload){
+  payload.code = CODE;
   return fetch(HOOK, { method:"POST", mode:"no-cors",
     headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
 }
@@ -154,6 +164,7 @@ function fetchMine(){
   if (!meOk()) return Promise.resolve([]);
   var u = HOOK + "?cls=" + encodeURIComponent(ME.cls) +
           "&no=" + encodeURIComponent(ME.no) + "&name=" + encodeURIComponent(ME.name) +
+          "&code=" + encodeURIComponent(CODE) +
           "&_=" + Date.now();
   return fetch(u, {cache:"no-store"})
     .then(function(r){ return r.json(); })
@@ -163,20 +174,34 @@ function fetchMine(){
 
 /* 명단은 깃허브에 올리지 않고 선생님 스크립트에서 받아옵니다.
    (학생 이름이 공개 저장소에 남지 않도록) */
+/* 인증번호가 맞는지 물어보고, 맞으면 명단을 함께 받아 옵니다.
+   돌려주는 값 — 명단 객체 = 통과 / "틀림" = 번호가 다름 / null = 연결 실패 */
+function checkCode(code){
+  return fetch(HOOK + "?roster=1&code=" + encodeURIComponent(code) + "&_=" + Date.now(),
+               {cache:"no-store"})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if (j && j.roster) return j.roster;
+      if (j && j.ok === false) return "틀림";
+      return null;
+    })
+    .catch(function(){ return null; });
+}
+
 function fetchRoster(){
   if (window.ROSTER) return Promise.resolve(window.ROSTER);   // 로컬 시험용 roster.js
   try {
     var c = JSON.parse(localStorage.getItem("mottainai_roster"));
     if (c) return Promise.resolve(c);        // 이 기기에는 한 번만 받아 옵니다
   } catch(e){}
-  return fetch(HOOK + "?roster=1", {cache:"no-store"})
-    .then(function(r){ return r.json(); })
-    .then(function(j){
-      if (!j || !j.roster) throw 0;
-      try { localStorage.setItem("mottainai_roster", JSON.stringify(j.roster)); } catch(e){}
-      return j.roster;
-    })
-    .catch(function(){ return null; });
+  if (!CODE) return Promise.resolve(null);
+  return checkCode(CODE).then(function(R){
+    // 선생님이 번호를 바꾸셨다면 지워서 다시 묻게 합니다
+    if (R === "틀림"){ clearCode(); return null; }
+    if (!R) return null;
+    try { localStorage.setItem("mottainai_roster", JSON.stringify(R)); } catch(e){}
+    return R;
+  });
 }
 
 /* 내가 낸 것 기억해 두기 (인터넷이 끊겨도 홈에서 보이도록) */

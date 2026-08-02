@@ -14,10 +14,22 @@
 
 <div class="wrap">
 
-  <!-- 나 고르기 -->
-  <section class="who" id="who">
+  <!-- ① 인증번호 -->
+  <section class="who" id="gate" style="display:none">
+    <b>선생님이 알려 주신 인증번호를 넣으세요</b>
+    <p class="dim">수업 시간에 선생님이 불러 주십니다. 한 번만 넣으면 됩니다.</p>
+    <div class="addw" style="margin-top:14px">
+      <input id="gCode" placeholder="인증번호" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button class="act solid" id="gOk" type="button">들어가기</button>
+    </div>
+    <p class="dim" id="gMsg" style="margin-top:10px"></p>
+    <p style="margin-top:16px"><a href="help.html">처음 쓰나요? 사용 방법 보기 →</a></p>
+  </section>
+
+  <!-- ② 나 고르기 -->
+  <section class="who" id="who" style="display:none">
     <div class="row">
-      <div><b id="whoName">내가 누구인지 먼저 알려 주세요</b>
+      <div><b id="whoName">내가 누구인지 알려 주세요</b>
         <p class="dim" id="whoSub">우리 반을 누르고 이름을 찾으세요.</p></div>
       <button class="act" id="whoBtn" type="button" style="display:none">바꾸기</button>
     </div>
@@ -36,7 +48,7 @@
   <div id="msg" class="notice" style="display:none"></div>
 
   <!-- 아홉 차시 -->
-  <div class="lgrid" id="lgrid"></div>
+  <div class="lgrid" id="lgrid" style="display:none"></div>
 
   <!-- 나의 성장 -->
   <section class="grow" id="grow" style="display:none">
@@ -46,7 +58,9 @@
   </section>
 
   <p class="dim" style="margin-top:26px;text-align:center">
-    흥진고등학교 일본어 회화 · 그림책 『もったいない』 프로젝트
+    <a href="help.html">사용 방법</a><span id="resetWrap" style="display:none"> &nbsp;·&nbsp;
+    <a href="#" id="reset">이 기기에서 나가기</a></span><br>
+    <span style="font-size:12px">흥진고등학교 일본어 회화 · 그림책 『もったいない』 프로젝트</span>
   </p>
 </div>
 
@@ -115,30 +129,75 @@ $("#mOk").onclick = function(){
   saveMe(); showMe(); load();
 };
 
-showMe(); drawSecs(); drawNames();
-
-/* 오래 걸리면 기다리지 않고 직접 적을 수 있게 열어 줍니다 */
-var slow = setTimeout(function(){
-  if (!ROSTER){
-    $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">' +
-      '명단을 부르는 중입니다. 기다리기 답답하면 아래에 직접 적어도 됩니다.</p>';
-    $("#manual").style.display = "flex";
-  }
-}, 4000);
-
-fetchRoster().then(function(R){
-  clearTimeout(slow);
-  if (!R){
-    $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">' +
-      '명단을 불러오지 못했습니다. 아래에 직접 적어 주세요.</p>';
-    $("#manual").style.display = "flex";
-    return;
-  }
+/* ── 들어가기 ──────────────────────────────────────────────── */
+function 명단받음(R){
   ROSTER = R; SECTIONS = Object.keys(R).sort();
   if (SECTIONS.indexOf(SEC) === -1) SEC = null;
   $("#manual").style.display = "none";
   drawSecs(); drawNames();
-});
+}
+
+function 문열기(){
+  $("#gate").style.display = "none";
+  $("#who").style.display = "block";
+  $("#lgrid").style.display = "grid";
+  $("#resetWrap").style.display = "inline";
+  showMe();
+  var slow = setTimeout(function(){
+    if (!ROSTER){
+      $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">' +
+        '명단을 부르는 중입니다. 기다리기 답답하면 아래에 직접 적어도 됩니다.</p>';
+      $("#manual").style.display = "flex";
+    }
+  }, 4000);
+  fetchRoster().then(function(R){
+    clearTimeout(slow);
+    if (!R){
+      $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">' +
+        '명단을 불러오지 못했습니다. 아래에 직접 적어 주세요.</p>';
+      $("#manual").style.display = "flex";
+      return;
+    }
+    명단받음(R);
+  });
+  load();
+}
+
+$("#gOk").onclick = function(){
+  var c = $("#gCode").value.trim();
+  if (!c){ $("#gMsg").textContent = "번호를 넣어 주세요."; return; }
+  $("#gOk").disabled = true;
+  $("#gMsg").textContent = "확인하는 중…";
+  checkCode(c).then(function(R){
+    $("#gOk").disabled = false;
+    if (R === "틀림"){
+      $("#gMsg").innerHTML = '<span class="err">번호가 다릅니다. 다시 넣어 주세요.</span>';
+      $("#gCode").select(); return;
+    }
+    if (!R){
+      $("#gMsg").innerHTML = '<span class="err">인터넷이 잠깐 끊긴 것 같습니다. 다시 눌러 주세요.</span>';
+      return;
+    }
+    saveCode(c);
+    try { localStorage.setItem("mottainai_roster", JSON.stringify(R)); } catch(e){}
+    $("#gMsg").textContent = "";
+    문열기(); 명단받음(R);
+  });
+};
+$("#gCode").onkeydown = function(e){ if (e.key === "Enter") $("#gOk").click(); };
+
+/* 공용 기기에서 다음 사람을 위해 지우기 */
+$("#reset").onclick = function(e){
+  e.preventDefault();
+  if (!confirm("이 기기에서 내 정보와 인증번호를 지웁니다.\n다음 사람이 다시 넣어야 합니다. 지울까요?")) return;
+  clearCode();
+  try { localStorage.removeItem("mottainai_me"); localStorage.removeItem("mottainai_sec"); } catch(err){}
+  location.reload();
+};
+
+drawCards([]);
+if (CODE) 문열기();
+else { $("#gate").style.display = "block"; $("#gCode").focus(); }
 
 /* ── 아홉 차시 카드 ────────────────────────────────────────── */
 function drawCards(rows){
@@ -207,7 +266,7 @@ function drawGrow(rows){
 
 /* ── 불러오기 ──────────────────────────────────────────────── */
 function load(){
-  if (!meOk()){ drawCards([]); $("#grow").style.display="none"; return; }
+  if (!meOk()){ drawCards([]); $("#grow").style.display="none"; $("#msg").style.display="none"; return; }
   $("#msg").style.display = "block";
   $("#msg").className = "notice";
   $("#msg").textContent = "내 기록을 불러오는 중…";
