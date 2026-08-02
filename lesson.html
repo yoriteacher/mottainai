@@ -304,7 +304,9 @@ function collect(){
     if (s.rows && s.rows.length){
       var rr = s.rows.filter(function(r){ return r && r.join("").trim(); })
                      .map(function(r){ return r.join(" · "); });
-      if (rr.length) lines.push("[" + b.title + "] " + rr.join(" / "));
+      // (2/3줄) — 몇 칸 가운데 몇 칸을 채웠는지. 자동 피드백이 이것을 읽습니다.
+      if (rr.length) lines.push("[" + b.title + "] (" + rr.length + "/" + b.rows + "줄) " +
+                                rr.join(" / "));
     }
     if (s.text && s.text.trim()) lines.push("[" + b.title + "] " + s.text.trim());
     if (s.audio){ audio = s.audio; mime = s.mime; }
