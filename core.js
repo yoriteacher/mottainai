@@ -188,20 +188,31 @@ function checkCode(code){
     .catch(function(){ return null; });
 }
 
-function fetchRoster(){
+/* 저장해 둔 명단이 있으면 그것으로 바로 그리고,
+   새 명단은 뒤에서 받아 옵니다. 선생님이 명단을 고치셔도 따라옵니다.
+   onFresh(R) — 뒤에서 받은 명단이 저장된 것과 다를 때만 부릅니다. */
+function fetchRoster(onFresh){
   if (window.ROSTER) return Promise.resolve(window.ROSTER);   // 로컬 시험용 roster.js
+
+  var 저장된 = null, 저장글 = "";
   try {
-    var c = JSON.parse(localStorage.getItem("mottainai_roster"));
-    if (c) return Promise.resolve(c);        // 이 기기에는 한 번만 받아 옵니다
+    저장글 = localStorage.getItem("mottainai_roster") || "";
+    저장된 = 저장글 ? JSON.parse(저장글) : null;
   } catch(e){}
-  if (!CODE) return Promise.resolve(null);
-  return checkCode(CODE).then(function(R){
+
+  if (!CODE) return Promise.resolve(저장된);
+
+  var 새로 = checkCode(CODE).then(function(R){
     // 선생님이 번호를 바꾸셨다면 지워서 다시 묻게 합니다
     if (R === "틀림"){ clearCode(); return null; }
     if (!R) return null;
-    try { localStorage.setItem("mottainai_roster", JSON.stringify(R)); } catch(e){}
+    var 글 = JSON.stringify(R);
+    try { localStorage.setItem("mottainai_roster", 글); } catch(e){}
+    if (저장된 && 글 !== 저장글 && onFresh) onFresh(R);        // 바뀌었으면 다시 그리도록
     return R;
   });
+
+  return 저장된 ? Promise.resolve(저장된) : 새로;
 }
 
 /* 내가 낸 것 기억해 두기 (인터넷이 끊겨도 홈에서 보이도록) */

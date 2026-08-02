@@ -150,7 +150,7 @@ function 문열기(){
       $("#manual").style.display = "flex";
     }
   }, 4000);
-  fetchRoster().then(function(R){
+  fetchRoster(명단받음).then(function(R){        // 명단이 바뀌었으면 뒤늦게라도 다시 그립니다
     clearTimeout(slow);
     if (!R){
       $("#names").innerHTML = '<p class="dim" style="grid-column:1/-1">' +
