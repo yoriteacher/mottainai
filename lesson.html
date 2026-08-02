@@ -99,7 +99,8 @@ L.blocks.forEach(function(b, bi){
   var into = $(".in", el);
   ({ sentences:drawSentences, words:drawWords, builder:drawBuilder,
      record:drawRecord, rows:drawRows, write:drawWrite,
-     compare:drawCompare, stance:drawStance, general:drawGeneral, pick:drawPick
+     compare:drawCompare, stance:drawStance, general:drawGeneral, pick:drawPick,
+     recall:drawRecall
    }[b.type] || function(){})(b, into, bi);
 });
 
@@ -404,6 +405,53 @@ function drawWrite(b, into, bi){
     : '<textarea class="wmany" rows="3" placeholder="'+esc(b.placeholder||"")+'"></textarea>';
   var el = $(".wone",into) || $(".wmany",into);
   el.oninput = function(){ STATE[bi].text = el.value; };
+}
+
+/* 지난 차시에 쓴 글 꺼내 보기 + 지금 생각 새로 쓰기
+   꺼내 보여 준 옛 글은 제출물에 넣지 않습니다 (지난 차시에 이미 냈으므로). */
+function pickPast(rows, from){
+  if (!rows || !rows.length || !from) return "";
+  var 머리 = "[" + from.item + "]";
+  var 찾음 = "";
+  rows.forEach(function(r){
+    if (!r || r.lesson != from.lesson || !r.work) return;
+    var ls = String(r.work).split(/\r?\n/), 담기 = null, 모음 = [];
+    ls.forEach(function(line){
+      if (line.indexOf(머리) === 0){ 담기 = [line.slice(머리.length).trim()]; 모음.push(담기); }
+      else if (담기 && line.indexOf("[") !== 0) 담기.push(line);   // 여러 줄로 쓴 경우
+      else 담기 = null;
+    });
+    var t = 모음.map(function(a){ return a.join("\n").trim(); })
+                .filter(function(s){ return s; }).join("\n");
+    if (t) 찾음 = t;            // 같은 차시를 여러 번 냈으면 마지막 것
+  });
+  return 찾음;
+}
+
+function drawRecall(b, into, bi){
+  /* ① 쓰는 칸을 먼저 그립니다 — 네트워크와 상관없이 바로 쓸 수 있게 */
+  into.innerHTML =
+    '<div class="notice past" style="white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word">' +
+      '<b>첫 시간에 적은 글</b><br><span class="pastb dim">불러오는 중…</span></div>' +
+    '<textarea class="wmany" rows="3" placeholder="' + esc(b.placeholder || "") + '"></textarea>';
+  var el = $(".wmany", into);
+  el.oninput = function(){ STATE[bi].text = el.value; };
+
+  /* ② 옛 글은 도착하면 채워 넣습니다 */
+  var 자리 = $(".pastb", into);
+  var 끝났나 = false;
+  function 없음(msg){ 자리.className = "pastb dim"; 자리.textContent = msg; }
+  /* 오래 걸리면 기다리게 두지 않습니다 */
+  setTimeout(function(){ if (!끝났나) 없음("첫 시간에 적어 둔 글이 없습니다. 지금 생각을 적어 보세요."); }, 8000);
+  Promise.resolve(fetchMine()).then(function(rows){
+    끝났나 = true;
+    var t = pickPast(rows, b.from);
+    if (t){ 자리.className = "pastb"; 자리.textContent = t; $(".past", into).className = "notice good past"; }
+    else 없음("첫 시간에 적어 둔 글이 없습니다. 지금 생각을 적어 보세요.");
+  }).catch(function(){
+    끝났나 = true;
+    없음("첫 시간에 적어 둔 글이 없습니다. 지금 생각을 적어 보세요.");
+  });
 }
 
 /* ── 제출 ──────────────────────────────────────────────────── */
