@@ -201,6 +201,24 @@ header .back:hover{ color:#fff; }
 .names button.on{ border-color:var(--ac); background:var(--ac); color:#fff; }
 .names button small{ display:block; font-size:10.5px; font-weight:600; opacity:.6; }
 
+/* 도장판 */
+.stampcard{ background:var(--card); border:1px solid var(--line); border-radius:12px;
+  padding:18px 20px 20px; margin-bottom:18px; }
+.stampcard .row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.stampcard b{ font-size:17px; }
+.stampcard .cnt{ flex:0 0 auto; }
+.stampcard .cnt b{ font-size:28px; color:var(--ac); }
+.stampcard .cnt span{ font-size:14px; color:var(--gray); font-weight:700; margin-left:2px; }
+.stamprow{ display:grid; grid-template-columns:repeat(9,1fr); gap:8px; margin-top:14px; }
+.stamp{ aspect-ratio:1; border:1px dashed var(--line); border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  background:var(--bg); }
+.stamp svg{ width:82%; height:auto; color:var(--ac); }
+.stamp .no{ font-size:17px; font-weight:800; color:var(--gray2); }
+.stamp em{ font-style:normal; font-size:10px; font-weight:700; color:var(--gray2); }
+.stamp.on{ border:1px solid var(--ac-l); background:var(--card); }
+.stamp.on em{ color:var(--ac); }
+
 .lgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
 .lcard{ display:block; text-decoration:none; color:inherit; background:var(--card);
   border:1px solid var(--line); border-radius:12px; padding:15px; position:relative; }
@@ -236,6 +254,8 @@ header .back:hover{ color:#fff; }
   .cards4{ grid-template-columns:repeat(2,1fr); }
   .frames{ grid-template-columns:1fr; }
   .lgrid{ grid-template-columns:repeat(2,1fr); }
+  .stamprow{ grid-template-columns:repeat(3,1fr); gap:8px; }
+  .stamp em{ font-size:10.5px; }
   .names{ grid-template-columns:repeat(3,1fr); }
   .gsum{ grid-template-columns:1fr; }
   .jp{ font-size:21px; }

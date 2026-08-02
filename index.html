@@ -47,6 +47,16 @@
 
   <div id="msg" class="notice" style="display:none"></div>
 
+  <!-- 도장판 -->
+  <section class="stampcard" id="stamps" style="display:none">
+    <div class="row">
+      <div><b>나의 도장판</b>
+        <p class="dim" id="stampSub">선생님이 확인하시면 도장이 찍힙니다.</p></div>
+      <div class="cnt"><b id="stampN">0</b><span>/ 9</span></div>
+    </div>
+    <div class="stamprow" id="stampRow"></div>
+  </section>
+
   <!-- 아홉 차시 -->
   <div class="lgrid" id="lgrid" style="display:none"></div>
 
@@ -222,6 +232,46 @@ function drawCards(rows){
   }).join("");
 }
 
+/* ── 도장판 ────────────────────────────────────────────────── */
+/* 「참! 잘했어요」 도장을 그립니다 — 둥근 테두리 + 별 고리 + 글자 */
+function 도장SVG(){
+  var 별 = "";
+  for (var i = 0; i < 22; i++){
+    var a = (i / 22) * 360;
+    별 += '<path d="M0 -4.6 1.35 -1.42 4.4 -1.42 1.9 0.54 2.85 3.72 0 1.8 -2.85 3.72 ' +
+          '-1.9 0.54 -4.4 -1.42 -1.35 -1.42 Z" transform="rotate(' + a + ' 50 50) translate(50 9.5)"/>';
+  }
+  return '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+    '<circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="5.5"/>' +
+    '<circle cx="50" cy="50" r="31" fill="none" stroke="currentColor" stroke-width="1.6"/>' +
+    '<g fill="currentColor">' + 별 + '</g>' +
+    '<text x="50" y="47" text-anchor="middle" font-size="15.5" font-weight="800" ' +
+      'fill="currentColor" font-family="Pretendard, sans-serif">참!</text>' +
+    '<text x="50" y="65" text-anchor="middle" font-size="14" font-weight="800" ' +
+      'fill="currentColor" font-family="Pretendard, sans-serif">잘했어요</text>' +
+  '</svg>';
+}
+
+function drawStamps(rows){
+  var 찍힘 = {};
+  (rows || []).forEach(function(r){ if (r.stamp) 찍힘[r.lesson] = true; });
+  var n = Object.keys(찍힘).length;
+
+  $("#stampRow").innerHTML = LESSONS.map(function(L){
+    var on = !!찍힘[L.no];
+    return '<div class="stamp' + (on ? ' on' : '') + '" title="' + esc(L.no + '차시 ' + L.title) + '">' +
+      (on ? 도장SVG() : '<span class="no">' + L.no + '</span>') +
+      '<em>' + L.no + '차시</em></div>';
+  }).join("");
+
+  $("#stampN").textContent = n;
+  $("#stampSub").textContent =
+    n === 9 ? "아홉 개를 다 모았습니다. 애썼습니다."
+    : n === 0 ? "선생님이 확인하시면 도장이 찍힙니다."
+    : "앞으로 " + (9 - n) + "개 남았습니다.";
+  $("#stamps").style.display = "block";
+}
+
 /* ── 나의 성장 ─────────────────────────────────────────────── */
 function drawGrow(rows){
   var byN = {}; rows.forEach(function(r){ byN[r.lesson] = r; });
@@ -279,6 +329,7 @@ function load(){
     }
     $("#msg").style.display = "none";
     drawCards(rows);
+    drawStamps(rows);
     if (rows.length) drawGrow(rows); else $("#grow").style.display = "none";
     var un = rows.filter(function(r){ return r.note; });
     if (un.length){
