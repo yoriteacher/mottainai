@@ -205,4 +205,27 @@ header .back:hover{ color:#fff; }
   .gsum{ grid-template-columns:1fr; }
   .jp{ font-size:21px; }
   header h1{ font-size:19px; }
+
+  /* 손가락으로 누를 만한 크기로 */
+  .act{ min-height:46px; padding:11px 16px; }
+  .chip,.wcard,.frame,.names button,.secs button{ min-height:46px; }
+  .kr button{ min-height:38px; }
+  .wone,.wmany,.addw input{ min-height:46px; font-size:16px; }  /* 16px 미만이면 아이폰이 확대합니다 */
+  .addw{ flex-wrap:wrap; }
+  .addw input{ flex:1 1 120px; }
+
+  /* 표를 줄 단위 카드로 — 좁은 칸에 글씨를 밀어 넣지 않도록 */
+  .grid, .grid tbody, .grid tr, .grid td{ display:block; width:100%; }
+  .grid .hd{ display:none; }
+  .grid tr{ border:1px solid var(--line); border-radius:10px; margin-bottom:10px;
+    padding:6px 12px 12px; counter-increment:줄; }
+  .grid tr::before{ content:counter(줄) "번째"; display:block; font-size:11px; font-weight:800;
+    color:var(--gray2); letter-spacing:.04em; padding:4px 0 2px; }
+  .grid td{ border:0; border-top:1px solid var(--line); padding:0; }
+  .grid td:first-of-type{ border-top:0; }
+  .grid td::before{ content:attr(data-l); display:block; font-size:12px; font-weight:700;
+    color:var(--gray); padding:9px 0 0; }
+  .grid input{ padding:6px 0 10px; font-size:16px; }
+  .grid input:focus{ outline:0; border-bottom:2px solid var(--ac); }
+  .in{ counter-reset:줄; }
 }

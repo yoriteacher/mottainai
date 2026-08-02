@@ -263,10 +263,12 @@ function drawRecord(b, into, bi){
 
 /* 표 입력 */
 function drawRows(b, into, bi){
-  var html = '<table class="grid"><tr>' + b.cols.map(function(c){ return '<th>'+esc(c)+'</th>'; }).join("") + '</tr>';
+  // data-l 은 좁은 화면에서 칸 이름을 보여 주는 데 씁니다 (style.css 참고)
+  var html = '<table class="grid"><tr class="hd">' +
+             b.cols.map(function(c){ return '<th>'+esc(c)+'</th>'; }).join("") + '</tr>';
   for (var r=0;r<b.rows;r++){
-    html += '<tr>' + b.cols.map(function(_,c){
-      return '<td><input data-r="'+r+'" data-c="'+c+'"></td>'; }).join("") + '</tr>';
+    html += '<tr>' + b.cols.map(function(c0,c){
+      return '<td data-l="'+esc(c0)+'"><input data-r="'+r+'" data-c="'+c+'"></td>'; }).join("") + '</tr>';
   }
   into.innerHTML = html + '</table>';
   $$("input", into).forEach(function(x){
