@@ -99,7 +99,7 @@ L.blocks.forEach(function(b, bi){
   var into = $(".in", el);
   ({ sentences:drawSentences, words:drawWords, builder:drawBuilder,
      record:drawRecord, rows:drawRows, write:drawWrite,
-     compare:drawCompare, stance:drawStance, general:drawGeneral
+     compare:drawCompare, stance:drawStance, general:drawGeneral, pick:drawPick
    }[b.type] || function(){})(b, into, bi);
 });
 
@@ -304,6 +304,51 @@ function drawCompare(b, into, bi){
   });
   var el = $(".wmany", into);
   el.oninput = function(){ STATE[bi].text = el.value; };
+}
+
+/* 골라 말하기 — 이미 익힌 문장 가운데 하나를 고르고 소리 내어 말한다
+   새로 짓게 하지 않는다. 고르는 일이 곧 개념 판단이 된다. */
+function drawPick(b, into, bi){
+  into.innerHTML =
+    '<div class="plist">' + b.items.map(function(s, i){
+      return '<button class="prow" data-p="' + i + '" type="button">' +
+        '<span class="pjp">' + esc(s.jp) + '</span>' +
+        '<span class="pko">' + esc(s.ko) + '</span></button>';
+    }).join("") + '</div>' +
+    '<div class="psay" style="display:none">' +
+      '<div class="lab2">고른 문장</div>' +
+      '<div class="jp pj"></div><div class="yomi py"></div><div class="ko pk"></div>' +
+      '<div class="btns">' +
+        '<button class="act sp" type="button">' + IC.play + '듣기</button>' +
+        '<button class="act ss" type="button">' + IC.slow + '천천히</button>' +
+        '<button class="act solid sm" type="button"' + (CAN_MIC ? "" : " disabled") + '>' +
+          IC.mic + '말하기</button>' +
+      '</div><div class="result pr"></div></div>' +
+    (b.ask ? '<p class="lab">' + esc(b.ask) + '</p>' +
+             '<textarea class="wmany" rows="2" placeholder="' + esc(b.placeholder || "") + '"></textarea>' : '');
+
+  var 고른 = null;
+  $$("[data-p]", into).forEach(function(x){
+    x.onclick = function(){
+      고른 = b.items[+x.dataset.p];
+      STATE[bi].pick = 고른.jp;
+      $$(".prow", into).forEach(function(p){ p.classList.remove("on"); });
+      x.classList.add("on");
+      $(".psay", into).style.display = "block";
+      $(".pj", into).textContent = 고른.jp;
+      $(".py", into).textContent = 고른.y;
+      $(".pk", into).textContent = 고른.ko;
+      $(".pr", into).className = "result pr";
+    };
+  });
+  $(".sp", into).onclick = function(){ if (고른) speak(고른.jp, false); };
+  $(".ss", into).onclick = function(){ if (고른) speak(고른.jp, true); };
+  $(".sm", into).onclick = function(){
+    if (!고른) return;
+    listen(고른, $(".sm", into), $(".pr", into), function(res){ STATE[bi].scores = [res.score]; });
+  };
+  var el = $(".wmany", into);
+  if (el) el.oninput = function(){ STATE[bi].text = el.value; };
 }
 
 /* 입장 정하기 — 고르고 까닭 대기 (논쟁적 질문) */

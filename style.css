@@ -134,6 +134,18 @@ header .back:hover{ color:#fff; }
 .tcard .jp{ font-size:19px; }
 .tcard .btns{ margin-top:10px; }
 
+/* 골라 말하기 */
+.plist{ display:grid; gap:7px; }
+.prow{ display:flex; align-items:baseline; gap:12px; text-align:left; cursor:pointer;
+  border:1px solid var(--line); background:var(--card); border-radius:9px; padding:12px 14px; }
+.prow:hover{ border-color:var(--ac); }
+.prow.on{ border-color:var(--ac); background:var(--ac-l); }
+.pjp{ font-size:17px; font-weight:700; }
+.pko{ font-size:13px; color:var(--gray); }
+.prow.on .pko{ color:var(--ac); }
+.psay{ margin-top:14px; padding:16px; background:var(--bg);
+  border:1px solid var(--line); border-radius:10px; }
+
 /* 입장 정하기 */
 .ques{ font-size:17px; font-weight:800; line-height:1.5; }
 .picks{ display:flex; gap:10px; margin-top:12px; }
@@ -249,6 +261,7 @@ header .back:hover{ color:#fff; }
   .grid td::before{ content:attr(data-l); display:block; font-size:12px; font-weight:700;
     color:var(--gray); padding:9px 0 0; }
   .two{ grid-template-columns:1fr; }
+  .prow{ flex-direction:column; gap:3px; min-height:56px; }
   .picks{ flex-direction:column; }
   .pick{ min-height:52px; }
   .gen input{ flex:1 1 100%; font-size:16px; }
