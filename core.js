@@ -45,22 +45,71 @@ var CAN_MIC = !!SR && SECURE;
 var CAN_REC = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
                  window.MediaRecorder && SECURE);
 
-/* ── 소리 내기 ─────────────────────────────────────────────── */
+/* ── 소리 내기 ───────────────────────────── */
 var VOICE = null;
+/* 도쿄(공통어) 악센트 음성을 이름으로 먼저 고른다.
+   Web Speech API에는 방언 설정이 없고, 악센트는 음성 엔진이 정한다.
+   아래는 모두 표준어(도쿄 악센트) 음성이다 — 윈도우/맥/안드로이드/크롬 순.
+   그다음은 기기 내장(localService) — 네트워크를 안 거쳠서 빠르다. */
+var JA_STD = ["haruka","ayumi","ichiro","sayaka","nanami","keita",
+              "kyoko","otoya","o-ren","hattori",
+              "google 日本語","japanese japan"];
 function pickVoice(){
-  var vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
-  VOICE = vs.filter(function(v){ return /^ja/i.test(v.lang); })[0] || null;
+  if (!window.speechSynthesis) return null;
+  var vs = speechSynthesis.getVoices() || [];
+  if (!vs.length) return null;
+  var ja = vs.filter(function(v){ return /^ja/i.test(v.lang); });
+  if (!ja.length) { VOICE = null; return null; }
+  var named = null;
+  for (var i = 0; i < JA_STD.length && !named; i++)
+    named = ja.filter(function(v){
+      return String(v.name).toLowerCase().indexOf(JA_STD[i]) > -1;
+    })[0] || null;
+  VOICE = named || ja.filter(function(v){ return v.localService; })[0] || ja[0];
+  return VOICE;
 }
 pickVoice();
 if (window.speechSynthesis && speechSynthesis.onvoiceschanged !== undefined)
   speechSynthesis.onvoiceschanged = pickVoice;
+
+var SPEAK_T = null, SPEAK_KEEP = null;
+function stopSpeak(){
+  if (!window.speechSynthesis) return;
+  if (SPEAK_T){ clearTimeout(SPEAK_T); SPEAK_T = null; }
+  if (SPEAK_KEEP){ clearInterval(SPEAK_KEEP); SPEAK_KEEP = null; }
+  try { speechSynthesis.cancel(); } catch(e){}
+}
+/* 【】 화면에는 띄어쓰기를 남기고, 소리낼 때만 공백을 버린다.
+   일본어 TTS는 공백을 끊어 읽기로 보아, 「わたしたちの スローガンです」처럼
+   중간에 공백이 있으면 뚝 끊기고 악센트가 평평해진다. */
+function sayText(t){
+  return String(t).replace(/[ 　]+/g, "");
+}
 function speak(t, slow){
   if (!window.speechSynthesis) return;
-  speechSynthesis.cancel();
-  var u = new SpeechSynthesisUtterance(t);
-  u.lang = "ja-JP"; u.rate = slow ? 0.6 : 0.85;
-  if (VOICE) u.voice = VOICE;
-  speechSynthesis.speak(u);
+  t = sayText(t);
+  if (!t) return;
+  if (MIC_BUSY) return;                 /* 마이크가 켜져 있으면 소리를 내지 않는다 */
+  var busy = speechSynthesis.speaking || speechSynthesis.pending;
+  stopSpeak();
+  if (!VOICE) pickVoice();
+  function go(){
+    SPEAK_T = null;
+    var u = new SpeechSynthesisUtterance(t);
+    u.lang = "ja-JP"; u.rate = slow ? 0.6 : 0.85;
+    if (VOICE) u.voice = VOICE;
+    u.onend = u.onerror = function(){
+      if (SPEAK_KEEP){ clearInterval(SPEAK_KEEP); SPEAK_KEEP = null; }
+    };
+    /* 크롬은 긴 문장을 15초쯤에서 스스로 멈춘다. 깨워 둔다. */
+    SPEAK_KEEP = setInterval(function(){
+      if (!speechSynthesis.speaking){ clearInterval(SPEAK_KEEP); SPEAK_KEEP = null; return; }
+      speechSynthesis.pause(); speechSynthesis.resume();
+    }, 9000);
+    speechSynthesis.speak(u);
+  }
+  /* cancel() 직후에 바로 speak()하면 크롬 음성 엔진이 먹통해진다. 한 박자 쉬다. */
+  if (busy) SPEAK_T = setTimeout(go, 120); else go();
 }
 
 /* ── 발음 채점 ─────────────────────────────────────────────── */
@@ -104,7 +153,7 @@ var MIC_BUSY = false;
 function listen(item, btn, box, cb){
   if (MIC_BUSY || !CAN_MIC) return;
   MIC_BUSY = true;
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  stopSpeak();
   var rec = new SR();
   rec.lang = "ja-JP"; rec.interimResults = false; rec.maxAlternatives = 5;
   var label = btn.innerHTML;
