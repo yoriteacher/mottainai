@@ -40,6 +40,8 @@ function josa(word, tmpl){
 
 /* ── 환경 ──────────────────────────────────────────────────── */
 var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 var SECURE = (location.protocol === "https:" || location.hostname === "localhost");
 var CAN_MIC = !!SR && SECURE;
 var CAN_REC = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
@@ -101,11 +103,15 @@ function speak(t, slow){
     u.onend = u.onerror = function(){
       if (SPEAK_KEEP){ clearInterval(SPEAK_KEEP); SPEAK_KEEP = null; }
     };
-    /* 크롬은 긴 문장을 15초쯤에서 스스로 멈춘다. 깨워 둔다. */
-    SPEAK_KEEP = setInterval(function(){
-      if (!speechSynthesis.speaking){ clearInterval(SPEAK_KEEP); SPEAK_KEEP = null; return; }
-      speechSynthesis.pause(); speechSynthesis.resume();
-    }, 9000);
+    /* 크롬은 긴 문장을 15초쯤에서 스스로 멈춘다. 깨워 둔다.
+       다만 아이폰에서는 pause()/resume()를 걸면 읽던 것이 그 자리에서 끊긴다.
+       아이폰은 스스로 멈추지도 않으니 깨울 까닭도 없다. */
+    if (!IS_IOS){
+      SPEAK_KEEP = setInterval(function(){
+        if (!speechSynthesis.speaking){ clearInterval(SPEAK_KEEP); SPEAK_KEEP = null; return; }
+        speechSynthesis.pause(); speechSynthesis.resume();
+      }, 9000);
+    }
     speechSynthesis.speak(u);
   }
   /* cancel() 직후에 바로 speak()하면 크롬 음성 엔진이 먹통해진다. 한 박자 쉬다. */
@@ -155,11 +161,25 @@ function listen(item, btn, box, cb){
   MIC_BUSY = true;
   stopSpeak();
   var rec = new SR();
-  rec.lang = "ja-JP"; rec.interimResults = false; rec.maxAlternatives = 5;
+  rec.lang = "ja-JP"; rec.interimResults = false;
+  /* 아이폰은 대안을 여러 개 달라고 하면 아무것도 안 돌려주는 일이 있다 */
+  rec.maxAlternatives = IS_IOS ? 1 : 5;
   var label = btn.innerHTML;
+  var 열렸나 = false, 깨우기 = null, 안전 = null, 끝났나 = false;
   btn.classList.add("rec"); btn.textContent = "듣는 중…";
   box.className = "result on";
   box.innerHTML = '<p class="dim">지금 말해 보세요.</p>';
+
+  function 마치기(){
+    if (끝났나) return; 끝났나 = true;
+    clearTimeout(깨우기); clearTimeout(안전);
+    MIC_BUSY = false;
+    btn.classList.remove("rec"); btn.innerHTML = label;
+  }
+  function 열림(){ 열렸나 = true; clearTimeout(깨우기); 깨우기 = null; }
+  rec.onstart = 열림;
+  rec.onaudiostart = 열림;
+
   rec.onresult = function(e){
     var best=0, said="", target=item.alt[0];
     for (var k=0;k<e.results[0].length;k++){
@@ -179,13 +199,41 @@ function listen(item, btn, box, cb){
     cb && cb({score:best, said:said});
   };
   rec.onerror = function(e){
+    var 아이폰안내 =
+      '마이크를 쓸 수 없습니다. ① 주소창 왼쪽 <b>ᴬA</b> → <b>웹사이트 설정</b>에서 마이크 허용, ' +
+      '② <b>설정 → 일반 → 키보드 → 받아쓰기 켜기</b>를 확인해 주세요.';
     box.innerHTML = '<p class="err">' +
-      (e.error==="not-allowed" ? "마이크가 막혀 있습니다. 주소창 옆에서 허용해 주세요."
+      ((e.error==="not-allowed" || e.error==="service-not-allowed")
+         ? (IS_IOS ? 아이폰안내 : "마이크가 막혀 있습니다. 주소창 옆에서 허용해 주세요.")
+       : e.error==="audio-capture" ? "마이크를 찾지 못했습니다. 이어폰을 뺐다 꽂거나 다른 앱(통화·녹음)을 닫고 다시 해 주세요."
        : e.error==="no-speech" ? "소리가 들리지 않았습니다. 조금 더 크게 말해 보세요."
+       : e.error==="aborted" ? "그만두었습니다. 다시 눌러 주세요."
        : "잠깐 문제가 있었습니다. 다시 눌러 주세요.") + '</p>';
+    마치기();
   };
-  rec.onend = function(){ MIC_BUSY=false; btn.classList.remove("rec"); btn.innerHTML=label; };
-  try { rec.start(); } catch(err){ MIC_BUSY=false; btn.classList.remove("rec"); btn.innerHTML=label; }
+  rec.onend = 마치기;
+
+  try { rec.start(); }
+  catch(err){
+    /* 앞의 인식이 아직 안 끝난 경우 — 새로 만들어 한 번 더 */
+    try { rec.abort(); } catch(e2){}
+    box.innerHTML = '<p class="err">마이크를 열지 못했습니다. 잠시 뒤 다시 눌러 주세요.</p>';
+    마치기(); return;
+  }
+
+  /* 아이폰은 받아쓰기가 꺼져 있으면 오류도 없이 조용하다. 2초 뒤에 확인한다. */
+  깨우기 = setTimeout(function(){
+    깨우기 = null;
+    if (!끝났나 && !열렸나 && IS_IOS)
+      box.innerHTML = '<p class="err">마이크가 열리지 않았습니다. ' +
+        '<b>설정 → 일반 → 키보드 → 받아쓰기 켜기</b>를 켜고 다시 눌러 주세요.</p>';
+  }, 2000);
+
+  /* 아무 소식 없이 버튼이 「듣는 중…」에 멈춰 있지 않도록 */
+  안전 = setTimeout(function(){
+    if (!끝났나){ try { rec.stop(); } catch(e3){} }
+    setTimeout(마치기, 1500);
+  }, IS_IOS ? 12000 : 9000);
 }
 
 /* ── 녹음 ──────────────────────────────────────────────────── */
@@ -204,11 +252,51 @@ function blobToBase64(b){
 }
 
 /* ── 서버 ──────────────────────────────────────────────────── */
-function submit(payload){
-  payload.code = CODE;
+/* 아이폰은 화면이 잠기거나 다른 앱으로 넘어가면 보내던 것이 중간에 끊긴다.
+   그래서 ① 세 번까지 다시 보내고 ② 그래도 안 되면 기기에 적어 두었다가
+   다시 연결되면 저절로 보낸다. (녹음은 너무 커서 적어 두지 못한다) */
+var 밀린열쇠 = "mottainai_못보낸";
+function 한번보내기(payload){
   return fetch(HOOK, { method:"POST", mode:"no-cors",
     headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload) });
 }
+function 밀린것읽기(){
+  try { return JSON.parse(localStorage.getItem(밀린열쇠)) || []; } catch(e){ return []; }
+}
+function 밀린것담기(p){
+  try {
+    var ㄴ = 밀린것읽기(), 가벼운 = {};
+    for (var k in p) if (k !== "audio") 가벼운[k] = p[k];
+    가벼운.녹음빠짐 = !!p.audio;          /* 녹음은 다시 받아야 한다 */
+    ㄴ.push(가벼운);
+    localStorage.setItem(밀린열쇠, JSON.stringify(ㄴ.slice(-20)));
+  } catch(e){}
+}
+function 밀린것보내기(){
+  if (navigator.onLine === false) return;
+  var ㄴ = 밀린것읽기(); if (!ㄴ.length) return;
+  try { localStorage.setItem(밀린열쇠, "[]"); } catch(e){}
+  ㄴ.forEach(function(p){ 한번보내기(p).catch(function(){ 밀린것담기(p); }); });
+}
+window.addEventListener("online", 밀린것보내기);
+document.addEventListener("visibilitychange", function(){
+  if (document.visibilityState === "visible") 밀린것보내기();
+});
+setTimeout(밀린것보내기, 2500);
+
+function submit(payload){
+  payload.code = CODE;
+  var 남은시도 = 3;
+  function 다시(){
+    return 한번보내기(payload).catch(function(err){
+      남은시도--;
+      if (남은시도 <= 0){ 밀린것담기(payload); throw err; }
+      return new Promise(function(r){ setTimeout(r, 1200); }).then(다시);
+    });
+  }
+  return 다시();
+}
+
 function fetchMine(){
   if (!meOk()) return Promise.resolve([]);
   var u = HOOK + "?cls=" + encodeURIComponent(ME.cls) +

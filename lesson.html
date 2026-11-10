@@ -250,9 +250,17 @@ function drawRecord(b, into, bi){
         stream.getTracks().forEach(function(t){ t.stop(); });
         clearInterval(TICK);
         var blob = new Blob(CH,{type:MIME});
+        rb.classList.remove("rec"); rb.innerHTML = IC.mic+"녹음 시작";
+        /* 아이폰은 소리가 하나도 안 담긴 채 끝나는 일이 있다.
+           그때 「녹음했습니다」라고 하면 학생은 빈 것을 그대로 보낸다. */
+        if (!blob.size){
+          STATE[bi].audio = null; ra.style.display="none"; ra.src="";
+          pb.disabled=true; db.disabled=true;
+          rs.textContent = "소리가 담기지 않았습니다. 다른 앱(통화·음악)을 닫고 다시 녹음해 주세요.";
+          return;
+        }
         STATE[bi].audio = blob; STATE[bi].mime = MIME;
         ra.src = URL.createObjectURL(blob); ra.style.display="block";
-        rb.classList.remove("rec"); rb.innerHTML = IC.mic+"녹음 시작";
         pb.disabled=false; db.disabled=false;
         rs.textContent = "녹음했습니다 ("+Math.round(blob.size/1024)+"KB). 들어 보고 아래에서 보내 주세요.";
       };
@@ -263,6 +271,14 @@ function drawRecord(b, into, bi){
         if(LEFT<=0 && REC.state==="recording") REC.stop(); },1000);
     }).catch(function(){ rs.textContent="마이크를 쓸 수 없습니다. 주소창 옆에서 허용해 주세요."; });
   };
+  /* 아이폰은 화면이 잠기거나 다른 앱으로 넘어가면 녹음이 조용히 죽는다.
+     그대로 두면 학생은 계속 녹음되는 줄 안다. 넘어가는 순간 멈춰 지금까지 것을 살린다. */
+  document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState !== "visible" && REC && REC.state === "recording"){
+      try { REC.stop(); } catch(e){}
+      rs.textContent = "화면이 꺼져 녹음을 멈췄습니다. 들어 보고 모자라면 다시 녹음해 주세요.";
+    }
+  });
   pb.onclick=function(){ ra.play(); };
   db.onclick=function(){ STATE[bi].audio=null; ra.style.display="none"; ra.src="";
     pb.disabled=true; db.disabled=true; rs.textContent="지웠습니다. 다시 녹음해 주세요."; };
@@ -498,7 +514,9 @@ $("#send").onclick = function(){
     markDone(N, c.score);
     $("#sendState").textContent = "보냈습니다. 선생님이 보시고 다음 시간에 말씀을 남겨 주십니다.";
   }).catch(function(){
-    $("#sendState").textContent = "보내지 못했습니다. 인터넷을 확인하고 다시 눌러 주세요.";
+    $("#sendState").textContent = c.audio
+      ? "보내지 못했습니다. 적은 글은 기기에 두었다가 인터넷이 돌아오면 저절로 보냅니다. 녹음은 다시 보내 주세요."
+      : "보내지 못했습니다. 기기에 적어 두었다가 인터넷이 돌아오면 저절로 보냅니다.";
   }).then(function(){ $("#send").disabled = false; });
 };
 
