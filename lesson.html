@@ -272,9 +272,10 @@ function drawRecord(b, into, bi){
     }).catch(function(){ rs.textContent="마이크를 쓸 수 없습니다. 주소창 옆에서 허용해 주세요."; });
   };
   /* 아이폰은 화면이 잠기거나 다른 앱으로 넘어가면 녹음이 조용히 죽는다.
-     그대로 두면 학생은 계속 녹음되는 줄 안다. 넘어가는 순간 멈춰 지금까지 것을 살린다. */
+     그대로 두면 학생은 계속 녹음되는 줄 안다. 넘어가는 순간 멈춰 지금까지 것을 살린다.
+     안드로이드·크롬은 뒤에서도 녹음이 이어지므로 건드리지 않는다. */
   document.addEventListener("visibilitychange", function(){
-    if (document.visibilityState !== "visible" && REC && REC.state === "recording"){
+    if (IS_IOS && document.visibilityState !== "visible" && REC && REC.state === "recording"){
       try { REC.stop(); } catch(e){}
       rs.textContent = "화면이 꺼져 녹음을 멈췄습니다. 들어 보고 모자라면 다시 녹음해 주세요.";
     }
